@@ -5,13 +5,18 @@ import AppLayout from "./components/AppLayout";
 import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
-import Library from "./pages/Library";
+import Folders from "./pages/Folders";
 import DeckDetail from "./pages/DeckDetail";
 import Flashcards from "./pages/Flashcards";
 import FlashcardSession from "./pages/FlashcardSession";
 import Profile from "./pages/Profile";
 import CreateDeck from "./pages/CreateDeck";
 import FolderDetail from "./pages/FolderDetail";
+import Info from "./pages/Info";
+import AuthCallback from "./pages/AuthCallback";
+import ResetPassword from "./pages/ResetPassword";
+import StudyLayout from "./components/StudyLayout";
+import StudyLearn from "./pages/StudyLearn";
 import StudyMatch from "./pages/StudyMatch";
 import StudyTest from "./pages/StudyTest";
 import StudyWrite from "./pages/StudyWrite";
@@ -54,34 +59,51 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/home" element={<Home />} />
-          <Route path="/library" element={<Library />} />
+          <Route path="/folders" element={<Folders />} />
+          <Route path="/folders/:folderId" element={<FolderDetail />} />
           <Route path="/library/:folderId" element={<FolderDetail />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/flashcards/deck/:deckId" element={<DeckDetail />} />
-          <Route
-            path="/flashcards/study/:deckId"
-            element={<FlashcardSession />}
-          />
-          <Route
-            path="/flashcards/study/:deckId/standard"
-            element={<FlashcardSession />}
-          />
-          <Route
-            path="/flashcards/study/:deckId/match"
-            element={<StudyMatch />}
-          />
-          <Route
-            path="/flashcards/study/:deckId/test"
-            element={<StudyTest />}
-          />
-          <Route
-            path="/flashcards/study/:deckId/write"
-            element={<StudyWrite />}
-          />
+          <Route element={<StudyLayout />}>
+            <Route
+              path="/flashcards/study/:deckId"
+              element={<FlashcardSession />}
+            />
+            <Route
+              path="/flashcards/study/:deckId/standard"
+              element={<FlashcardSession />}
+            />
+            <Route
+              path="/flashcards/study/:deckId/learn"
+              element={<StudyLearn />}
+            />
+            <Route
+              path="/flashcards/study/:deckId/match"
+              element={<StudyMatch />}
+            />
+            <Route
+              path="/flashcards/study/:deckId/test"
+              element={<StudyTest />}
+            />
+            <Route
+              path="/flashcards/study/:deckId/write"
+              element={<StudyWrite />}
+            />
+          </Route>
           <Route path="/create-deck" element={<CreateDeck />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>
+
+      {/* Google va emaildagi havolalardan qaytish: sessiya bo'lsa ham ochiladi */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
+      {/* Hamma uchun ochiq sahifalar */}
+      <Route path="/about" element={<Info key="about" page="about" />} />
+      <Route path="/help" element={<Info key="help" page="help" />} />
+      <Route path="/contact" element={<Info key="contact" page="contact" />} />
+      <Route path="/privacy" element={<Info key="privacy" page="privacy" />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

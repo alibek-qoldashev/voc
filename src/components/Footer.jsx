@@ -1,67 +1,61 @@
 import { Link } from 'react-router-dom';
-import Logo, { BRAND } from './Logo';
+import { LANGUAGES, useLang } from '../lib/i18n';
+import Logo from './Logo';
+import { Select } from './ui';
 
-const columns = [
-  {
-    title: 'Product',
-    links: [
-      { label: 'How it works', href: '#how-it-works' },
-      { label: 'Advantages', href: '#advantages' },
-      { label: 'Create an account', to: '/signup' },
-    ],
-  },
-  {
-    title: 'Learn',
-    links: [
-      { label: 'Spaced repetition', href: '#how-it-works' },
-      { label: 'Building a deck', href: '#how-it-works' },
-      { label: 'Study tips', href: '#how-it-works' },
-    ],
-  },
-  {
-    title: 'Contact',
-    links: [
-      { label: 'hello@mindpro.app', href: 'mailto:hello@mindpro.app' },
-      { label: 'Report a problem', href: 'mailto:hello@mindpro.app?subject=Problem%20report' },
-    ],
-  },
+const links = [
+  { to: '/about', key: 'footer.about' },
+  { to: '/help', key: 'footer.help' },
+  { to: '/contact', key: 'footer.contact' },
+  { to: '/privacy', key: 'footer.privacy' },
 ];
 
-export default function Footer() {
+function GlobeIcon() {
   return (
-    <footer className="border-t border-white/10 bg-night">
-      <div className="mx-auto max-w-6xl px-6 py-14">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
-          <div>
-            <Logo className="text-2xl" />
-            <h2 className="mt-4 text-lg font-bold">About</h2>
-            <p className="mt-2 max-w-sm text-sm leading-relaxed text-mist">
-              {BRAND} is a vocabulary app built for language learners. Collect the words you meet, then let the
-              review schedule decide when to show each one again, so nothing you learn quietly fades away.
-            </p>
-          </div>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z" />
+    </svg>
+  );
+}
 
-          {columns.map((col) => (
-            <nav key={col.title} aria-label={col.title}>
-              <h2 className="text-lg font-bold">{col.title}</h2>
-              <ul className="mt-3 space-y-2 text-sm">
-                {col.links.map((l) => (
-                  <li key={l.label}>
-                    {l.to ? (
-                      <Link to={l.to} className="text-mist hover:text-leaf">{l.label}</Link>
-                    ) : (
-                      <a href={l.href} className="text-mist hover:text-leaf">{l.label}</a>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
+// Ixcham footer: havolalar, til tanlovi va mualliflik
+export default function Footer({ className = '' }) {
+  const { lang, setLang, t } = useLang();
+
+  return (
+    <footer className={`border-t border-white/10 ${className}`}>
+      <div className="mx-auto flex max-w-6xl flex-col gap-5 px-6 py-6 md:flex-row md:items-center md:justify-between">
+        <nav aria-label={t('footer.nav')}>
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            {links.map((l) => (
+              <li key={l.to}>
+                <Link to={l.to} className="text-mist hover:text-leaf">
+                  {t(l.key)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+          <label className="flex items-center gap-2 text-mist">
+            <GlobeIcon />
+            <span className="sr-only">{t('footer.language')}</span>
+            <Select value={lang} onChange={(e) => setLang(e.target.value)}>
+              {LANGUAGES.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.label}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <p className="flex items-center gap-2 text-mist">
+            <Logo className="text-sm" />
+            <span>Copyright © 2026 Alibek Qoldashev</span>
+          </p>
         </div>
-
-        <p className="mt-12 border-t border-white/10 pt-6 text-sm text-mist">
-          © {new Date().getFullYear()} {BRAND}. Built in Tashkent.
-        </p>
       </div>
     </footer>
   );

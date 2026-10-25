@@ -124,20 +124,21 @@ export function schedule(srs, rating, now = Date.now()) {
   };
 }
 
-export function fmtInterval(ms) {
+// t — tarjima funksiyasi (i18n): "unit.min" va h.k. kalitlar
+export function fmtInterval(ms, t = (k, v) => `${v.n} ${k.slice(5)}`) {
   const min = Math.round(ms / MIN);
-  if (min < 1) return "<1 min";
-  if (min < 60) return `${min} min`;
+  if (min < 1) return `<${t("unit.min", { n: 1 })}`;
+  if (min < 60) return t("unit.min", { n: min });
   const h = Math.round(min / 60);
-  if (h < 24) return `${h} h`;
+  if (h < 24) return t("unit.h", { n: h });
   const d = Math.round(ms / DAY);
-  if (d < 30) return `${d} d`;
-  if (d < 365) return `${Math.round(d / 30)} mo`;
-  return `${(d / 365).toFixed(1)} y`;
+  if (d < 30) return t("unit.d", { n: d });
+  if (d < 365) return t("unit.mo", { n: Math.round(d / 30) });
+  return t("unit.y", { n: (d / 365).toFixed(1) });
 }
 
-export const previewLabels = (srs, now = Date.now()) =>
-  RATINGS.map((r) => fmtInterval(schedule(srs, r.id, now).due - now));
+export const previewLabels = (srs, t, now = Date.now()) =>
+  RATINGS.map((r) => fmtInterval(schedule(srs, r.id, now).due - now, t));
 
 // Shu oyna ichida qaytadigan karta sessiya navbatiga qaytariladi
 export const LEARN_AGAIN_WINDOW = 20 * MIN;

@@ -33,6 +33,7 @@ export async function getDecksWithStats() {
     supabase
       .from("decks")
       .select("*")
+      .order("pinned", { ascending: false })
       .order("created_at", { ascending: false })
       .then(must),
     supabase.from("deck_stats").select("*").then(must),
@@ -86,23 +87,31 @@ export const getCards = (deckId) =>
     .from("cards")
     .select("*")
     .eq("deck_id", deckId)
+    .order("position", { ascending: true })
     .order("created_at", { ascending: true })
     .then(must);
 
-export const addCards = (deckId, cards) =>
-  supabase
+// position: hozirgi vaqt + tartib raqami, shunda yangi kartalar oxiriga,
+// bir partiyadagilar esa berilgan tartibda tushadi
+export const addCards = (deckId, cards) => {
+  const base = Date.now() / 1000;
+  return supabase
     .from("cards")
     .insert(
-      cards.map((c) => ({
+      cards.map((c, i) => ({
         deck_id: deckId,
         term: c.term.trim(),
         definition: (c.definition || "").trim(),
         translation: (c.translation || "").trim(),
         example: (c.example || "").trim(),
+        term_image: c.term_image || null,
+        definition_image: c.definition_image || null,
+        position: base + i / 1000,
       })),
     )
     .select()
     .then(must);
+};
 
 export const updateCard = (id, f) =>
   supabase
@@ -152,6 +161,7 @@ export async function getStudyQueue(deckId) {
     .from("cards")
     .select("*")
     .eq("srs_state", "new")
+    .order("position", { ascending: true })
     .order("created_at", { ascending: true })
     .limit(left);
   if (deckId !== "all") {
@@ -192,21 +202,69 @@ export const logPractice = (deckId, cardId, correct) =>
     was_new: false,
   });
 
+// ---- Papkalar ----------------------------------------------------------
+export async function getFolders() {
+  const [folders, decks] = await Promise.all([
+    supabase
+      .from("folders")
+      .select("*")
+      .order("pinned", { ascending: false })
+      .order("created_at", { ascending: false })
+      .then(must),
+    supabase.from("decks").select("id, folder_id").then(must),
+  ]);
+  const counts = {};
+  decks.forEach((d) => {
+    if (d.folder_id) counts[d.folder_id] = (counts[d.folder_id] || 0) + 1;
+  });
+  return folders.map((f) => ({ ...f, deckCount: counts[f.id] || 0 }));
+}
+
+export const getFolder = (id) =>
+  supabase.from("folders").select("*").eq("id", id).single().then(must);
+
+export const createFolder = (name, description = "") =>
+  supabase
+    .from("folders")
+    .insert({ name: name.trim(), description: description.trim() })
+    .select()
+    .single()
+    .then(must);
+
+export const renameFolder = (id, name) =>
+  supabase
+    .from("folders")
+    .update({ name: name.trim() })
+    .eq("id", id)
+    .then(must);
+
+export const deleteFolder = (id) =>
+  supabase.from("folders").delete().eq("id", id).then(must);
+
+// Papkaga qo'shish yoki undan chiqarish
+export const setDeckFolder = (deckId, folderId) =>
+  supabase
+    .from("decks")
+    .update({ folder_id: folderId })
+    .eq("id", deckId)
+    .then(must);
+
+export const setFolderPinned = (id, pinned) =>
+  supabase.from("folders").update({ pinned }).eq("id", id).then(must);
+
+export const setDeckPinned = (id, pinned) =>
+  supabase.from("decks").update({ pinned }).eq("id", id).then(must);
+
 // ---- Home sahifa ---------------------------------------------------------
 export async function getHomeData() {
   const since = new Date();
   since.setDate(since.getDate() - 30);
   since.setHours(0, 0, 0, 0);
 
-  const [decks, newLeft, words, logs] = await Promise.all([
+  const [decks, newLeft, folders, logs] = await Promise.all([
     getDecksWithStats(),
     getNewLeft(),
-    supabase
-      .from("review_logs")
-      .select("id, rating, reviewed_at, cards(term, translation)")
-      .order("reviewed_at", { ascending: false })
-      .limit(8)
-      .then(must),
+    getFolders(),
     supabase
       .from("review_logs")
       .select("reviewed_at")
@@ -235,7 +293,11 @@ export async function getHomeData() {
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    days.push({ label: WEEKDAYS[d.getDay()], count: perDay[dayKey(d)] || 0 });
+    days.push({
+      label: WEEKDAYS[d.getDay()],
+      date: d,
+      count: perDay[dayKey(d)] || 0,
+    });
   }
   let streak = 0;
   const cursor = new Date();
@@ -248,7 +310,7 @@ export async function getHomeData() {
   return {
     todayCount,
     recentDecks,
-    words,
+    recentFolders: folders.slice(0, 4),
     days,
     streak,
     hasDecks: decks.length > 0,
@@ -316,49 +378,52 @@ export async function removeAvatar() {
 
 // Akkauntni o'chirish: SQL'dagi delete_account() funksiyasi bajaradi
 export const deleteAccount = () => supabase.rpc("delete_account").then(must);
-
-// ---- Papkalar ----------------------------------------------------------
-export async function getFolders() {
-  const [folders, decks] = await Promise.all([
-    supabase
-      .from("folders")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(must),
-    supabase.from("decks").select("id, folder_id").then(must),
-  ]);
-  const counts = {};
-  decks.forEach((d) => {
-    if (d.folder_id) counts[d.folder_id] = (counts[d.folder_id] || 0) + 1;
-  });
-  return folders.map((f) => ({ ...f, deckCount: counts[f.id] || 0 }));
+// ---- Karta rasmlari va rasmdan import ------------------------------------
+// Rasmni kichraytirib JPEG qiladi: yuklash tez, AI uchun ham arzonroq
+export async function shrinkImage(file, maxSide = 1600, quality = 0.85) {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("Could not read the image"))),
+      "image/jpeg",
+      quality,
+    ),
+  );
 }
 
-export const getFolder = (id) =>
-  supabase.from("folders").select("*").eq("id", id).single().then(must);
+export async function uploadCardImage(file) {
+  const { data: auth } = await supabase.auth.getUser();
+  const blob = await shrinkImage(file, 1200);
+  const path = `${auth.user.id}/${crypto.randomUUID()}.jpg`;
+  const up = await supabase.storage
+    .from("card-images")
+    .upload(path, blob, { contentType: "image/jpeg" });
+  if (up.error) throw up.error;
+  return supabase.storage.from("card-images").getPublicUrl(path).data.publicUrl;
+}
 
-export const createFolder = (name, description = "") =>
-  supabase
-    .from("folders")
-    .insert({ name: name.trim(), description: description.trim() })
-    .select()
-    .single()
-    .then(must);
+const toBase64 = (blob) =>
+  new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1]);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
 
-export const renameFolder = (id, name) =>
-  supabase
-    .from("folders")
-    .update({ name: name.trim() })
-    .eq("id", id)
-    .then(must);
-
-export const deleteFolder = (id) =>
-  supabase.from("folders").delete().eq("id", id).then(must);
-
-// Papkaga qo'shish yoki undan chiqarish
-export const setDeckFolder = (deckId, folderId) =>
-  supabase
-    .from("decks")
-    .update({ folder_id: folderId })
-    .eq("id", deckId)
-    .then(must);
+// Rasmdagi so'zlarni "extract-words" Edge Function (Claude) orqali ajratib oladi.
+// Natija: [{ term, definition }]
+export async function extractWordsFromPhoto(file) {
+  const blob = await shrinkImage(file, 1600);
+  const { data, error } = await supabase.functions.invoke("extract-words", {
+    body: { image: await toBase64(blob), mediaType: "image/jpeg" },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data.cards ?? [];
+}

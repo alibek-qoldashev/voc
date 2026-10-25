@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getHomeData } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import DeckTile from "../components/DeckTile";
+import CreateMenu from "../components/CreateMenu";
 import {
   Badge,
   ErrorBox,
@@ -10,30 +10,61 @@ import {
   Spinner,
   btnClass,
 } from "../components/ui";
-import CreateDeckButton from "../components/CreateDeckButton";
-import CreateMenu from "../components/CreateMenu"; // CreateDeckButton o'rniga
+import { useLang, weekdayShort } from "../lib/i18n";
 
-const RATING = [
-  { label: "Again", tone: "rose" },
-  { label: "Hard", tone: "amber" },
-  { label: "Good", tone: "leaf" },
-  { label: "Easy", tone: "sky" },
-];
-
-const timeAgo = (iso) => {
-  const mins = Math.max(
-    0,
-    Math.round((Date.now() - new Date(iso).getTime()) / 60000),
+function FolderIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 7a1 1 0 0 1 1-1h4l2 2h10a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+    </svg>
   );
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
-  const h = Math.round(mins / 60);
-  if (h < 24) return `${h} h ago`;
-  return `${Math.round(h / 24)} d ago`;
-};
+}
+
+function DeckCard({ deck }) {
+  const { t } = useLang();
+  const counts = [
+    { label: t("count.new"), value: deck.newCount ?? 0, cls: "text-sky" },
+    { label: t("count.learn"), value: deck.learnCount ?? 0, cls: "text-rose" },
+    { label: t("count.due"), value: deck.dueCount ?? 0, cls: "text-[#8fe36b]" },
+  ];
+  return (
+    <Link
+      to={`/flashcards/deck/${deck.id}`}
+      className="glass flex h-full flex-col rounded-3xl p-5 transition-colors hover:border-white/30"
+    >
+      <h3 className="text-lg font-bold leading-snug">{deck.name}</h3>
+      <dl className="mt-3 flex gap-5">
+        {counts.map((c) => (
+          <div key={c.label}>
+            <dt className="text-xs text-mist">{c.label}</dt>
+            <dd
+              className={`text-lg font-extrabold tabular-nums ${c.value ? c.cls : "text-mist/40"}`}
+            >
+              {c.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-auto pt-3 text-xs text-mist">
+        {t("count.terms", { count: deck.total })}
+      </p>
+    </Link>
+  );
+}
 
 export default function Home() {
   const { user } = useAuth();
+  const { lang, t } = useLang();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
@@ -50,15 +81,15 @@ export default function Home() {
 
   return (
     <div className="space-y-10">
-      <PageTitle right={<CreateMenu />}>Welcome back</PageTitle>
+      <PageTitle right={<CreateMenu />}>{t("home.welcome")}</PageTitle>
 
       <section className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="glass rounded-3xl p-7">
-          <p className="text-mist">Today</p>
+          <p className="text-mist">{t("home.today")}</p>
           <p className="mt-1 text-6xl font-extrabold">
             {data.todayCount}
             <span className="ml-3 text-xl font-semibold text-mist">
-              cards to review
+              {t("home.toReview", { count: data.todayCount })}
             </span>
           </p>
           <div className="mt-6">
@@ -67,16 +98,16 @@ export default function Home() {
                 to="/flashcards/study/all"
                 className={btnClass("primary", "px-8 py-3.5")}
               >
-                Start studying
+                {t("home.start")}
               </Link>
             ) : data.hasDecks ? (
-              <p className="text-mist">You are all caught up for today.</p>
+              <p className="text-mist">{t("home.caughtUp")}</p>
             ) : (
               <Link
                 to="/create-deck"
                 className={btnClass("primary", "px-8 py-3.5")}
               >
-                Create your first deck
+                {t("home.firstDeck")}
               </Link>
             )}
           </div>
@@ -84,18 +115,18 @@ export default function Home() {
 
         <div className="glass rounded-3xl p-7">
           <div className="flex items-baseline justify-between">
-            <p className="text-mist">Last 7 days</p>
+            <p className="text-mist">{t("home.last7")}</p>
             <p className="text-sm">
               <span className="text-xl font-extrabold text-leaf">
                 {data.streak}
               </span>{" "}
-              day streak
+              {t("home.streak", { count: data.streak })}
             </p>
           </div>
           <div
             className="mt-5 flex h-24 items-end gap-2"
             role="img"
-            aria-label="Reviews per day for the last 7 days"
+            aria-label={t("home.chartLabel")}
           >
             {data.days.map((d, i) => (
               <div
@@ -105,9 +136,11 @@ export default function Home() {
                 <div
                   className={`w-full rounded-md ${d.count ? "bg-leaf" : "bg-white/10"}`}
                   style={{ height: `${Math.max(6, (d.count / max) * 64)}px` }}
-                  title={`${d.count} reviews`}
+                  title={t("home.reviews", { count: d.count })}
                 />
-                <span className="text-[11px] text-mist">{d.label}</span>
+                <span className="text-[11px] text-mist">
+                  {weekdayShort(lang, d.date)}
+                </span>
               </div>
             ))}
           </div>
@@ -116,54 +149,60 @@ export default function Home() {
 
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-extrabold">Recent decks</h2>
+          <h2 className="text-2xl font-extrabold">{t("home.recentDecks")}</h2>
           <Link to="/flashcards" className="text-sm text-leaf underline">
-            See all decks
+            {t("home.allDecks")}
           </Link>
         </div>
         {data.recentDecks.length === 0 ? (
-          <p className="text-mist">No decks yet. Your library is empty.</p>
+          <p className="text-mist">{t("home.noDecks")}</p>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {data.recentDecks.map((d) => (
-              <DeckTile key={d.id} deck={d} />
+              <DeckCard key={d.id} deck={d} />
             ))}
           </div>
         )}
       </section>
 
       <section>
-        <h2 className="mb-4 text-2xl font-extrabold">Recent words</h2>
-        {data.words.length === 0 ? (
-          <p className="text-mist">Words you study will show up here.</p>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-2xl font-extrabold">{t("home.recentFolders")}</h2>
+          <Link to="/folders" className="text-sm text-leaf underline">
+            {t("home.allFolders")}
+          </Link>
+        </div>
+        {data.recentFolders.length === 0 ? (
+          <p className="text-mist">{t("home.noFolders")}</p>
         ) : (
-          <ul className="glass divide-y divide-white/10 rounded-3xl">
-            {data.words.map((w) => (
-              <li
-                key={w.id}
-                className="flex flex-wrap items-center justify-between gap-3 px-6 py-4"
-              >
-                <div>
-                  <p className="text-lg font-bold">{w.cards?.term}</p>
-                  {w.cards?.translation && (
-                    <p className="text-sm text-mist">{w.cards.translation}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge tone={RATING[w.rating].tone}>
-                    {RATING[w.rating].label}
-                  </Badge>
-                  <span className="text-xs text-mist">
-                    {timeAgo(w.reviewed_at)}
+          <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {data.recentFolders.map((f) => (
+              <li key={f.id}>
+                <Link
+                  to={`/folders/${f.id}`}
+                  className="glass flex h-full flex-col gap-3 rounded-3xl p-5 transition-colors hover:border-white/30"
+                >
+                  <span className="text-leaf">
+                    <FolderIcon />
                   </span>
-                </div>
+                  <span className="text-lg font-bold leading-snug">
+                    {f.name}
+                  </span>
+                  <span className="mt-auto pt-2">
+                    <Badge>
+                      {t("count.decks", { count: f.deckCount })}
+                    </Badge>
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <p className="text-xs text-mist">Signed in as {user?.email}</p>
+      <p className="text-xs text-mist">
+        {t("home.signedIn", { email: user?.email })}
+      </p>
     </div>
   );
 }

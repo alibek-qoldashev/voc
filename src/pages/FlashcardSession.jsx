@@ -8,7 +8,16 @@ import {
   schedule,
 } from "../lib/srs";
 import { maskTerm, speak } from "../lib/utils";
-import { Btn, ErrorBox, Spinner, SpeakIcon, btnClass } from "../components/ui";
+import { useStudy } from "../lib/study";
+import { useLang } from "../lib/i18n";
+import {
+  Btn,
+  CardImage,
+  ErrorBox,
+  Spinner,
+  SpeakIcon,
+  btnClass,
+} from "../components/ui";
 
 const rateStyle = [
   "border-rose/50 text-rose hover:bg-rose/10",
@@ -20,6 +29,8 @@ const rateStyle = [
 export default function FlashcardSession() {
   const { deckId } = useParams();
   const navigate = useNavigate();
+  const { filter, order, say } = useStudy();
+  const { t } = useLang();
   const [queue, setQueue] = useState(null);
   const [flipped, setFlipped] = useState(false);
   const [reverse, setReverse] = useState(false);
@@ -30,7 +41,8 @@ export default function FlashcardSession() {
   useEffect(() => {
     let alive = true;
     getStudyQueue(deckId)
-      .then((items) => {
+      .then((all) => {
+        const items = order(filter(all, (i) => i.card.id));
         if (alive) {
           setQueue(items);
           setTotal(items.length);
@@ -43,6 +55,15 @@ export default function FlashcardSession() {
   }, [deckId]);
 
   const current = queue?.[0];
+
+  // Text to speech: ko'rinib turgan tomonni o'qiydi
+  useEffect(() => {
+    if (!current) return;
+    const c = current.card;
+    const def = c.definition || c.translation;
+    say(flipped !== reverse ? def : c.term);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.card.id, flipped, reverse, done]);
   const back = deckId === "all" ? "/flashcards" : `/flashcards/deck/${deckId}`;
 
   const grade = useCallback(
@@ -56,7 +77,7 @@ export default function FlashcardSession() {
         srs: next,
         rating,
         wasNew: current.srs.state === "new",
-      }).catch((e) => setError(`Could not save your progress: ${e.message}`));
+      }).catch((e) => setError(t("anki.saveError", { msg: e.message })));
       setQueue((q) => {
         const [head, ...rest] = q;
         return next.due - now < LEARN_AGAIN_WINDOW
@@ -85,7 +106,7 @@ export default function FlashcardSession() {
     return () => window.removeEventListener("keydown", onKey);
   }, [current, flipped, grade]);
 
-  if (!queue && !error) return <Spinner label="Preparing your cards" />;
+  if (!queue && !error) return <Spinner label={t("anki.preparing")} />;
 
   if (!current) {
     return (
@@ -93,17 +114,17 @@ export default function FlashcardSession() {
         <ErrorBox>{error}</ErrorBox>
         <div className="glass mt-4 rounded-3xl p-10 text-center">
           <h1 className="text-3xl font-extrabold">
-            {total ? "Session complete" : "Nothing to study right now"}
+            {total ? t("anki.complete") : t("anki.nothing")}
           </h1>
           <p className="mt-3 text-mist">
             {total
-              ? `You answered ${done} cards. Cards come back automatically when they are due.`
-              : "There are no due or new cards here. Add more terms or come back later."}
+              ? t("anki.answered", { count: done })
+              : t("anki.nothingHint")}
           </p>
           <div className="mt-8 flex justify-center gap-3">
-            <Btn onClick={() => navigate(back)}>Done</Btn>
+            <Btn onClick={() => navigate(back)}>{t("common.done")}</Btn>
             <Link to="/home" className={btnClass("glass")}>
-              Home
+              {t("nav.home")}
             </Link>
           </div>
         </div>
@@ -112,12 +133,16 @@ export default function FlashcardSession() {
   }
 
   const c = current.card;
-  const labels = previewLabels(current.srs);
+  const labels = previewLabels(current.srs, t);
   const termFace = (
-    <p className="text-5xl font-extrabold sm:text-6xl">{c.term}</p>
+    <>
+      <CardImage src={c.term_image} />
+      <p className="text-5xl font-extrabold sm:text-6xl">{c.term}</p>
+    </>
   );
   const defFace = (
     <>
+      <CardImage src={c.definition_image} />
       {c.translation && (
         <p className="text-3xl font-extrabold text-[#8fe36b]">
           {c.translation}
@@ -139,10 +164,7 @@ export default function FlashcardSession() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <Link to={back} className="text-sm text-mist hover:text-leaf">
-          ← Exit
-        </Link>
+      <div className="mb-4 flex items-center justify-end gap-3">
         <label className="flex items-center gap-2 text-sm text-mist">
           <input
             type="checkbox"
@@ -152,7 +174,7 @@ export default function FlashcardSession() {
               setFlipped(false);
             }}
           />
-          Definition first
+          {t("anki.defFirst")}
         </label>
       </div>
 
@@ -160,8 +182,8 @@ export default function FlashcardSession() {
         className="mb-1 flex justify-between text-sm text-mist"
         aria-live="polite"
       >
-        <span>{queue.length} left</span>
-        <span>{done} answered</span>
+        <span>{t("study.left", { n: queue.length })}</span>
+        <span>{t("anki.answeredCount", { n: done })}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
         <div
@@ -195,9 +217,9 @@ export default function FlashcardSession() {
           <Btn
             variant="glass"
             onClick={() => speak(c.term)}
-            aria-label={`Listen to ${c.term}`}
+            aria-label={t("common.listenTo", { term: c.term })}
           >
-            <SpeakIcon /> Listen
+            <SpeakIcon /> {t("common.listen")}
           </Btn>
         </div>
 
@@ -206,7 +228,7 @@ export default function FlashcardSession() {
             className="w-full py-4 text-base"
             onClick={() => setFlipped(true)}
           >
-            Show answer{" "}
+            {t("keys.showAnswer")}{" "}
             <span className="text-xs font-normal opacity-70">(Space)</span>
           </Btn>
         ) : (
@@ -220,7 +242,7 @@ export default function FlashcardSession() {
               >
                 <span>{r.label}</span>
                 <span className="text-xs font-normal text-mist">
-                  {labels[r.id]} (key {r.key})
+                  {labels[r.id]} ({t("anki.key", { k: r.key })})
                 </span>
               </button>
             ))}

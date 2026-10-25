@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { EyeIcon } from './ui';
+import { useLang } from '../lib/i18n';
 
 // Parol maydoni: o'ngdagi ko'z belgisi matnni ko'rsatadi yoki yashiradi
 export default function PasswordInput({ id, value, onChange, autoComplete, minLength, placeholder }) {
   const [shown, setShown] = useState(false);
+  const { t } = useLang();
   return (
     <div className="relative">
       <input
@@ -20,7 +22,7 @@ export default function PasswordInput({ id, value, onChange, autoComplete, minLe
       <button
         type="button"
         onClick={() => setShown((s) => !s)}
-        aria-label={shown ? 'Hide password' : 'Show password'}
+        aria-label={shown ? t('auth.hidePassword') : t('auth.showPassword')}
         aria-pressed={shown}
         className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-full text-night/60 hover:text-night"
       >

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import Logo, { BRAND } from "./Logo";
+import Logo from "./Logo";
+import Footer from "./Footer";
+import { useLang } from "../lib/i18n";
 
 function HomeIcon() {
   return (
@@ -87,16 +89,16 @@ function BurgerIcon({ open }) {
 }
 
 const links = [
-  { to: "/home", label: "Home", Icon: HomeIcon },
-  { to: "/library", label: "Library", Icon: LibraryIcon },
-  { to: "/flashcards", label: "Flashcards", Icon: CardsIcon },
+  { to: "/home", label: "nav.home", Icon: HomeIcon },
+  { to: "/folders", label: "nav.folders", Icon: LibraryIcon },
+  { to: "/flashcards", label: "nav.flashcards", Icon: CardsIcon },
 ];
 
 const STORAGE_KEY = "mindpro:sidebar-open";
 
 export default function AppLayout() {
   const { user } = useAuth();
-  const { pathname } = useLocation();
+  const { t } = useLang();
 
   // Desktop: keng yoki ingichka. Tanlov brauzerda saqlanadi.
   const [open, setOpen] = useState(() => {
@@ -106,9 +108,6 @@ export default function AppLayout() {
       return true;
     }
   });
-  // Mobil: sidebar ekran ustiga chiqadi
-  const [drawer, setDrawer] = useState(false);
-
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, open ? "open" : "closed");
@@ -117,28 +116,13 @@ export default function AppLayout() {
     }
   }, [open]);
 
-  // Sahifa almashsa, mobil menyu yopiladi
-  useEffect(() => setDrawer(false), [pathname]);
-
-  // Mobil menyu ochiqda: Esc yopadi va orqa fon siljimaydi
-  useEffect(() => {
-    if (!drawer) return;
-    const onKey = (e) => e.key === "Escape" && setDrawer(false);
-    window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [drawer]);
-
   const navLinks = (
     <ul className="space-y-1">
       {links.map(({ to, label, Icon }) => (
         <li key={to}>
           <NavLink
             to={to}
-            title={open ? undefined : label}
+            title={open ? undefined : t(label)}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-2xl py-3 transition-colors ${open ? "px-4" : "justify-center px-0"} ${
                 isActive
@@ -148,7 +132,7 @@ export default function AppLayout() {
             }
           >
             <Icon />
-            {open && <span className="truncate">{label}</span>}
+            {open && <span className="truncate">{t(label)}</span>}
           </NavLink>
         </li>
       ))}
@@ -162,7 +146,7 @@ export default function AppLayout() {
     <div className="mt-auto border-t border-white/10 pt-4">
       <NavLink
         to="/profile"
-        title={open ? undefined : "Profile"}
+        title={open ? undefined : t("nav.profile")}
         className={({ isActive }) =>
           `flex items-center gap-3 rounded-2xl py-2.5 transition-colors ${open ? "px-2" : "justify-center px-0"} ${
             isActive ? "bg-white/10" : "hover:bg-white/5"
@@ -177,7 +161,9 @@ export default function AppLayout() {
         </span>
         {open && (
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-bold">Profile</span>
+            <span className="block truncate text-sm font-bold">
+              {t("nav.profile")}
+            </span>
             <span
               className="block truncate text-xs text-mist"
               title={user?.email}
@@ -206,7 +192,7 @@ export default function AppLayout() {
             type="button"
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
-            aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+            aria-label={open ? t("nav.collapse") : t("nav.expand")}
             className="rounded-xl p-2 text-white hover:bg-white/10"
           >
             <BurgerIcon open={false} />
@@ -215,7 +201,7 @@ export default function AppLayout() {
 
         <nav
           className="glass flex flex-1 flex-col rounded-3xl p-4"
-          aria-label="Main"
+          aria-label={t("nav.main")}
         >
           {navLinks}
           {profileBlock}
@@ -223,98 +209,48 @@ export default function AppLayout() {
       </aside>
 
       {/* Mobil yuqori panel */}
-      <header className="glass sticky top-0 z-30 flex items-center gap-3 rounded-2xl px-4 py-3 md:hidden">
-        <button
-          type="button"
-          onClick={() => setDrawer(true)}
-          aria-label="Open menu"
-          aria-expanded={drawer}
-          className="rounded-xl p-2 text-white hover:bg-white/10"
-        >
-          <BurgerIcon open={false} />
-        </button>
+      <header className="glass sticky top-0 z-30 flex items-center rounded-b-2xl px-5 py-3.5 md:hidden">
         <Logo className="text-xl" />
       </header>
 
-      {/* Mobil menyu */}
-      {drawer && (
-        <>
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setDrawer(false)}
-            className="fixed inset-0 z-40 bg-black/60 md:hidden"
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={`${BRAND} menu`}
-            className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col gap-4 bg-night p-4 md:hidden"
-          >
-            <div className="glass flex items-center justify-between rounded-3xl px-5 py-4">
-              <Logo />
-              <button
-                type="button"
-                onClick={() => setDrawer(false)}
-                aria-label="Close menu"
-                className="rounded-xl p-2 text-white hover:bg-white/10"
-              >
-                <BurgerIcon open />
-              </button>
-            </div>
-            <nav
-              className="glass flex flex-1 flex-col rounded-3xl p-4"
-              aria-label="Main"
-            >
-              <ul className="space-y-1">
-                {links.map(({ to, label, Icon }) => (
-                  <li key={to}>
-                    <NavLink
-                      to={to}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-2xl px-4 py-3 ${
-                          isActive
-                            ? "bg-white/10 font-bold text-leaf"
-                            : "text-white hover:bg-white/5"
-                        }`
-                      }
-                    >
-                      <Icon />
-                      <span>{label}</span>
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-auto border-t border-white/10 pt-4">
+      {/* Mobil pastki dock: sidebar o'rnida */}
+      <nav
+        aria-label={t("nav.main")}
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-night/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      >
+        <ul className="mx-auto grid max-w-md grid-cols-4">
+          {[...links, { to: "/profile", label: "nav.profile", Icon: null }].map(
+            ({ to, label, Icon }) => (
+              <li key={to}>
                 <NavLink
-                  to="/profile"
+                  to={to}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-2xl px-2 py-2.5 ${isActive ? "bg-white/10" : "hover:bg-white/5"}`
+                    `flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition-colors ${
+                      isActive ? "text-leaf" : "text-mist hover:text-white"
+                    }`
                   }
                 >
-                  <span
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 font-bold"
-                    aria-hidden="true"
-                  >
-                    {initial}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-bold">
-                      Profile
+                  {Icon ? (
+                    <Icon />
+                  ) : (
+                    <span
+                      className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-white/15 text-[11px] font-bold text-white"
+                      aria-hidden="true"
+                    >
+                      {initial}
                     </span>
-                    <span className="block truncate text-xs text-mist">
-                      {user?.email}
-                    </span>
-                  </span>
+                  )}
+                  {t(label)}
                 </NavLink>
-              </div>
-            </nav>
-          </div>
-        </>
-      )}
+              </li>
+            ),
+          )}
+        </ul>
+      </nav>
 
-      <main className="min-w-0 flex-1 px-4 pb-20 pt-6 sm:px-6 md:px-2 md:pt-2">
+      <main className="min-w-0 flex-1 px-4 pb-28 pt-6 md:pb-20 sm:px-6 md:px-2 md:pt-2">
         <Outlet />
+        <Footer className="mt-16" />
       </main>
     </div>
   );

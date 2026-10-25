@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
 import { shuffle } from "../lib/utils";
+import { useStudy } from "../lib/study";
+import { useLang } from "../lib/i18n";
 import { Btn, ErrorBox, Spinner } from "../components/ui";
 
 const PAIRS = 6;
 
-const deal = (cards) =>
+const deal = (cards, order) =>
   shuffle(
-    shuffle(cards)
+    order(cards)
       .slice(0, PAIRS)
       .flatMap((c) => [
         { key: `${c.id}-t`, pair: c.id, text: c.term, kind: "term" },
@@ -23,6 +25,8 @@ const deal = (cards) =>
 
 export default function StudyMatch() {
   const { deckId } = useParams();
+  const { filter, order, say } = useStudy();
+  const { t } = useLang();
   const [cards, setCards] = useState(null);
   const [tiles, setTiles] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -38,9 +42,9 @@ export default function StudyMatch() {
   useEffect(() => {
     getCards(deckId)
       .then((cs) => {
-        const usable = cs.filter((c) => c.definition || c.translation);
+        const usable = filter(cs).filter((c) => c.definition || c.translation);
         setCards(usable);
-        setTiles(deal(usable));
+        setTiles(deal(usable, order));
       })
       .catch((e) => setError(e.message));
   }, [deckId]);
@@ -56,19 +60,19 @@ export default function StudyMatch() {
   }, [startedAt, finished]);
 
   if (error) return <ErrorBox>{error}</ErrorBox>;
-  if (!cards) return <Spinner label="Dealing the cards" />;
+  if (!cards) return <Spinner label={t("match.dealing")} />;
   if (cards.length < 3) {
     return (
       <div className="glass rounded-3xl p-8 text-center">
-        <p className="text-xl font-bold">Not enough cards</p>
+        <p className="text-xl font-bold">{t("study.notEnough")}</p>
         <p className="mt-1 text-mist">
-          Match needs at least 3 cards that have a definition.
+          {t("match.needs")}
         </p>
         <Link
           to={`/flashcards/deck/${deckId}`}
           className="mt-5 inline-block text-leaf underline"
         >
-          Back to the deck
+          {t("study.backToDeck")}
         </Link>
       </div>
     );
@@ -78,7 +82,7 @@ export default function StudyMatch() {
   const sec = (ms) => (ms / 1000).toFixed(1);
 
   const restart = () => {
-    setTiles(deal(cards));
+    setTiles(deal(cards, order));
     setSelected(null);
     setMatched(new Set());
     setWrong([]);
@@ -96,6 +100,7 @@ export default function StudyMatch() {
       wrong.length
     )
       return;
+    say(tile.text);
     if (!startedAt) setStartedAt(Date.now());
     if (!selected) return setSelected(tile.key);
 
@@ -120,31 +125,27 @@ export default function StudyMatch() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <Link
-          to={`/flashcards/deck/${deckId}`}
-          className="text-sm text-mist hover:text-leaf"
-        >
-          ← Exit
-        </Link>
-        <span className="font-bold tabular-nums">{sec(elapsed)} s</span>
+      <div className="mb-5 flex items-center justify-end gap-3">
+        <span className="font-bold tabular-nums">
+          {t("match.sec", { n: sec(elapsed) })}
+        </span>
       </div>
 
       {finished && (
         <div className="glass mb-6 rounded-3xl p-7 text-center" role="status">
           <p className="text-3xl font-extrabold text-leaf">
-            {sec(elapsed)} seconds
+            {t("match.seconds", { n: sec(elapsed) })}
           </p>
           <p className="mt-2 text-mist">
-            {mistakes} mistake{mistakes === 1 ? "" : "s"}.
+            {t("match.mistakes", { count: mistakes })}
           </p>
           <div className="mt-5 flex justify-center gap-3">
-            <Btn onClick={restart}>Play again</Btn>
+            <Btn onClick={restart}>{t("match.again")}</Btn>
             <Link
               to={`/flashcards/deck/${deckId}`}
               className="self-center text-sm text-mist underline"
             >
-              Back to deck
+              {t("study.backToDeck")}
             </Link>
           </div>
         </div>
@@ -181,7 +182,7 @@ export default function StudyMatch() {
         })}
       </ul>
       <p className="mt-4 text-sm text-mist">
-        Pair each term with its definition. The clock starts on your first tap.
+        {t("match.hint")}
       </p>
     </div>
   );

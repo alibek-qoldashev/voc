@@ -4,100 +4,56 @@ import {
   deleteDeck,
   getDecksWithStats,
   getNewLeft,
-  updateDeck,
+  renameDeck,
+  setDeckPinned,
 } from "../lib/api";
 import CreateMenu from "../components/CreateMenu";
-import DeckTile from "../components/DeckTile";
+import ItemMenu from "../components/ItemMenu";
 import {
   Badge,
-  Btn,
   ErrorBox,
-  Field,
   PageTitle,
   Spinner,
   btnClass,
   fieldCls,
 } from "../components/ui";
+import { useLang } from "../lib/i18n";
 
-function DeckEditRow({ deck, onSaved, onDeleted }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(deck.name);
-  const [description, setDescription] = useState(deck.description || "");
-  const [busy, setBusy] = useState(false);
-
-  if (editing) {
-    return (
-      <li className="glass rounded-2xl p-5">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Deck name">
-            <input
-              autoFocus
-              className={fieldCls}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Field>
-          <Field label="Description">
-            <input
-              className={fieldCls}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </Field>
-        </div>
-        <div className="mt-4 flex gap-3">
-          <Btn
-            disabled={!name.trim() || busy}
-            onClick={async () => {
-              setBusy(true);
-              await onSaved(deck.id, { name, description });
-              setBusy(false);
-              setEditing(false);
-            }}
-          >
-            {busy ? "Saving…" : "Save"}
-          </Btn>
-          <Btn
-            variant="glass"
-            onClick={() => {
-              setName(deck.name);
-              setDescription(deck.description || "");
-              setEditing(false);
-            }}
-          >
-            Cancel
-          </Btn>
-        </div>
-      </li>
-    );
-  }
-
+function PinIcon() {
   return (
-    <li className="glass flex flex-wrap items-center justify-between gap-4 rounded-2xl p-5">
-      <div className="min-w-0">
-        <p className="truncate text-lg font-bold">{deck.name}</p>
-        {deck.description && (
-          <p className="truncate text-sm text-mist">{deck.description}</p>
-        )}
-        <p className="mt-1 text-sm text-mist">{deck.total} terms</p>
-      </div>
-      <div className="flex gap-2">
-        <Btn
-          variant="glass"
-          className="!px-4 !py-1.5"
-          onClick={() => setEditing(true)}
-        >
-          Edit
-        </Btn>
-        <Btn
-          variant="danger"
-          className="!px-4 !py-1.5"
-          onClick={() => onDeleted(deck)}
-        >
-          Delete
-        </Btn>
-      </div>
-    </li>
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M14 2 9 7H5l5 5-6 8 8-6 5 5V15l5-5h-4z" />
+    </svg>
+  );
+}
+
+// Anki uslubidagi uchta hisob
+function Counts({ deck }) {
+  const { t } = useLang();
+  const items = [
+    { label: t("count.new"), value: deck.newCount ?? 0, cls: "text-sky" },
+    { label: t("count.learn"), value: deck.learnCount ?? 0, cls: "text-rose" },
+    { label: t("count.due"), value: deck.dueCount ?? 0, cls: "text-[#8fe36b]" },
+  ];
+  return (
+    <dl className="mt-3 flex gap-5">
+      {items.map((i) => (
+        <div key={i.label}>
+          <dt className="text-xs text-mist">{i.label}</dt>
+          <dd
+            className={`text-xl font-extrabold tabular-nums ${i.value ? i.cls : "text-mist/40"}`}
+          >
+            {i.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -106,7 +62,7 @@ export default function Flashcards() {
   const [newLeft, setNewLeft] = useState(0);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [editMode, setEditMode] = useState(false);
+  const { t } = useLang();
 
   const load = () =>
     Promise.all([getDecksWithStats(), getNewLeft()])
@@ -123,13 +79,12 @@ export default function Flashcards() {
   if (error && !decks) return <ErrorBox>{error}</ErrorBox>;
   if (!decks) return <Spinner />;
 
-  const due = decks.reduce((s, d) => s + d.dueCount, 0);
-  const learn = decks.reduce((s, d) => s + d.learnCount, 0);
-  const fresh = decks.reduce((s, d) => s + d.newCount, 0);
+  const due = decks.reduce((s, d) => s + (d.dueCount ?? 0), 0);
+  const learn = decks.reduce((s, d) => s + (d.learnCount ?? 0), 0);
+  const fresh = decks.reduce((s, d) => s + (d.newCount ?? 0), 0);
   const today = due + learn + Math.min(newLeft, fresh);
 
   const q = query.trim().toLowerCase();
-
   const shown = decks.filter(
     (d) =>
       !q ||
@@ -137,10 +92,23 @@ export default function Flashcards() {
       (d.description || "").toLowerCase().includes(q),
   );
 
-  const save = async (id, fields) => {
+  const pin = async (deck) => {
     try {
-      const row = await updateDeck(id, fields);
-      setDecks((ds) => ds.map((d) => (d.id === id ? { ...d, ...row } : d)));
+      await setDeckPinned(deck.id, !deck.pinned);
+      load();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const rename = async (deck) => {
+    const name = window.prompt(t("decks.renamePrompt"), deck.name);
+    if (!name?.trim()) return;
+    try {
+      await renameDeck(deck.id, name);
+      setDecks((ds) =>
+        ds.map((d) => (d.id === deck.id ? { ...d, name: name.trim() } : d)),
+      );
     } catch (e) {
       setError(e.message);
     }
@@ -149,7 +117,7 @@ export default function Flashcards() {
   const remove = async (deck) => {
     if (
       !window.confirm(
-        `Delete "${deck.name}" and its ${deck.total} cards? This cannot be undone.`,
+        t("decks.deleteConfirm", { name: deck.name, count: deck.total }),
       )
     )
       return;
@@ -163,34 +131,20 @@ export default function Flashcards() {
 
   return (
     <div>
-      <PageTitle
-        right={
-          <div className="flex items-center gap-3">
-            {decks.length > 0 && (
-              <Btn
-                variant={editMode ? "primary" : "glass"}
-                onClick={() => setEditMode((v) => !v)}
-              >
-                {editMode ? "Done" : "Edit"}
-              </Btn>
-            )}
-            <CreateMenu />
-          </div>
-        }
-      >
-        Flashcards
-      </PageTitle>
+      <PageTitle right={<CreateMenu />}>{t("nav.flashcards")}</PageTitle>
 
       <ErrorBox>{error}</ErrorBox>
 
-      {decks.length > 0 && !editMode && (
+      {decks.length > 0 && (
         <section className="glass mb-8 flex flex-wrap items-center justify-between gap-4 rounded-3xl p-7">
           <div>
-            <h2 className="text-2xl font-extrabold">All decks</h2>
+            <h2 className="text-2xl font-extrabold">{t("decks.all")}</h2>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Badge tone="sky">{Math.min(newLeft, fresh)} new</Badge>
-              <Badge tone="rose">{learn} learning</Badge>
-              <Badge tone="leaf">{due} due</Badge>
+              <Badge tone="sky">
+                {t("decks.newBadge", { n: Math.min(newLeft, fresh) })}
+              </Badge>
+              <Badge tone="rose">{t("decks.learningBadge", { n: learn })}</Badge>
+              <Badge tone="leaf">{t("decks.dueBadge", { n: due })}</Badge>
             </div>
           </div>
           {today > 0 ? (
@@ -198,55 +152,103 @@ export default function Flashcards() {
               to="/flashcards/study/all"
               className={btnClass("primary", "px-8 py-3.5")}
             >
-              Study {today} cards
+              {t("decks.studyN", { count: today })}
             </Link>
           ) : (
-            <p className="text-mist">Nothing to review right now.</p>
+            <p className="text-mist">{t("decks.nothing")}</p>
           )}
         </section>
       )}
 
       {decks.length === 0 ? (
         <div className="glass rounded-3xl p-10 text-center">
-          <p className="text-xl font-bold">You have no any decks yet</p>
+          <p className="text-xl font-bold">{t("decks.empty")}</p>
           <p className="mt-1 text-mist">
-            Use the plus button to create your first deck.
+            {t("decks.emptyHint")}
           </p>
         </div>
       ) : (
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-extrabold">
-              {editMode ? "Edit your decks" : "Your decks"}
-            </h2>
+            <h2 className="text-xl font-extrabold">{t("decks.yours")}</h2>
             <input
               className={`${fieldCls} max-w-xs`}
-              placeholder="Search decks"
-              aria-label="Search decks"
+              placeholder={t("decks.search")}
+              aria-label={t("decks.search")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
 
           {shown.length === 0 ? (
-            <p className="text-mist">Nothing matches "{query}".</p>
-          ) : editMode ? (
-            <ul className="space-y-3">
-              {shown.map((d) => (
-                <DeckEditRow
-                  key={d.id}
-                  deck={d}
-                  onSaved={save}
-                  onDeleted={remove}
-                />
-              ))}
-            </ul>
+            <p className="text-mist">{t("common.noMatch", { query })}</p>
           ) : (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {shown.map((d) => (
-                <DeckTile key={d.id} deck={d} />
-              ))}
-            </div>
+            <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {shown.map((d) => {
+                const ready =
+                  (d.newCount ?? 0) + (d.learnCount ?? 0) + (d.dueCount ?? 0);
+                return (
+                  <li
+                    key={d.id}
+                    className="glass relative flex h-full flex-col gap-4 rounded-3xl p-5"
+                  >
+                    <div className="absolute right-3 top-3">
+                      <ItemMenu
+                        label={t("common.optionsFor", { name: d.name })}
+                        items={[
+                          {
+                            label: d.pinned ? t("common.unpin") : t("common.pin"),
+                            onClick: () => pin(d),
+                          },
+                          { label: t("common.rename"), onClick: () => rename(d) },
+                          {
+                            label: t("common.delete"),
+                            onClick: () => remove(d),
+                            danger: true,
+                          },
+                        ]}
+                      />
+                    </div>
+
+                    <Link
+                      to={`/flashcards/deck/${d.id}`}
+                      className="block flex-1 pr-10"
+                    >
+                      <h3 className="text-xl font-bold leading-snug">
+                        {d.name}
+                      </h3>
+                      {d.description && (
+                        <p className="mt-1 line-clamp-2 text-sm text-mist">
+                          {d.description}
+                        </p>
+                      )}
+                      <Counts deck={d} />
+                      <p className="mt-3 flex items-center gap-2 text-xs text-mist">
+                        {t("count.termsTotal", { count: d.total })}
+                        {d.pinned && (
+                          <span className="flex items-center gap-1 font-semibold text-leaf">
+                            <PinIcon /> {t("common.pinned")}
+                          </span>
+                        )}
+                      </p>
+                    </Link>
+
+                    {ready > 0 ? (
+                      <Link
+                        to={`/flashcards/deck/${d.id}`}
+                        className={btnClass("primary", "w-full")}
+                      >
+                        {t("decks.study")}
+                      </Link>
+                    ) : (
+                      <span className="text-center text-sm text-mist">
+                        {d.total ? t("decks.caughtUp") : t("decks.addFirst")}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </>
       )}

@@ -2,12 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
 import { shuffle } from "../lib/utils";
+import { useStudy } from "../lib/study";
+import { useLang } from "../lib/i18n";
 import { Btn, ErrorBox, Spinner } from "../components/ui";
 
 const QUESTION_LIMIT = 20;
 
 export default function StudyTest() {
   const { deckId } = useParams();
+  const { filter, order, say } = useStudy();
+  const { t } = useLang();
   const [cards, setCards] = useState(null);
   const [error, setError] = useState("");
   const [index, setIndex] = useState(0);
@@ -17,13 +21,15 @@ export default function StudyTest() {
 
   useEffect(() => {
     getCards(deckId)
-      .then((cs) => setCards(cs.filter((c) => c.definition || c.translation)))
+      .then((cs) =>
+        setCards(filter(cs).filter((c) => c.definition || c.translation)),
+      )
       .catch((e) => setError(e.message));
   }, [deckId]);
 
   const questions = useMemo(() => {
     if (!cards || cards.length < 4) return [];
-    return shuffle(cards)
+    return order(cards)
       .slice(0, QUESTION_LIMIT)
       .map((card) => {
         const others = shuffle(cards.filter((c) => c.id !== card.id)).slice(
@@ -35,20 +41,26 @@ export default function StudyTest() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, round]);
 
+  const asked = questions[index]?.card;
+  useEffect(() => {
+    if (asked) say(asked.definition || asked.translation);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [asked?.id, round]);
+
   if (error) return <ErrorBox>{error}</ErrorBox>;
-  if (!cards) return <Spinner label="Building your test" />;
+  if (!cards) return <Spinner label={t("test.building")} />;
   if (cards.length < 4) {
     return (
       <div className="glass rounded-3xl p-8 text-center">
-        <p className="text-xl font-bold">Not enough cards</p>
+        <p className="text-xl font-bold">{t("study.notEnough")}</p>
         <p className="mt-1 text-mist">
-          Test needs at least 4 cards that have a definition.
+          {t("test.needs")}
         </p>
         <Link
           to={`/flashcards/deck/${deckId}`}
           className="mt-5 inline-block text-leaf underline"
         >
-          Back to the deck
+          {t("study.backToDeck")}
         </Link>
       </div>
     );
@@ -61,10 +73,10 @@ export default function StudyTest() {
     return (
       <div className="mx-auto max-w-xl">
         <div className="glass rounded-3xl p-10 text-center">
-          <h1 className="text-3xl font-extrabold">Test finished</h1>
+          <h1 className="text-3xl font-extrabold">{t("test.finished")}</h1>
           <p className="mt-3 text-5xl font-extrabold text-leaf">{pct}%</p>
           <p className="mt-2 text-mist">
-            {score} of {questions.length} correct.
+            {t("test.score", { n: score, total: questions.length })}
           </p>
           <div className="mt-8 flex justify-center gap-3">
             <Btn
@@ -75,13 +87,13 @@ export default function StudyTest() {
                 setPicked(null);
               }}
             >
-              Try again
+              {t("study.tryAgain")}
             </Btn>
             <Link
               to={`/flashcards/deck/${deckId}`}
               className="self-center text-sm text-mist underline"
             >
-              Back to deck
+              {t("study.backToDeck")}
             </Link>
           </div>
         </div>
@@ -104,13 +116,7 @@ export default function StudyTest() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <Link
-          to={`/flashcards/deck/${deckId}`}
-          className="text-sm text-mist hover:text-leaf"
-        >
-          ← Exit
-        </Link>
+      <div className="mb-5 flex items-center justify-end gap-3">
         <span className="text-sm text-mist">
           {index + 1} / {questions.length}
         </span>
@@ -124,7 +130,7 @@ export default function StudyTest() {
       </div>
 
       <section className="glass mt-6 rounded-3xl p-7">
-        <p className="text-sm text-mist">Which term fits this?</p>
+        <p className="text-sm text-mist">{t("test.question")}</p>
         <p className="mt-2 text-2xl font-bold leading-snug">
           {q.card.definition || q.card.translation}
         </p>
@@ -165,11 +171,11 @@ export default function StudyTest() {
             }
           >
             {picked === q.card.id
-              ? "Correct"
-              : `Correct answer: ${q.card.term}`}
+              ? t("study.correct")
+              : t("test.correctAnswer", { term: q.card.term })}
           </p>
           <Btn autoFocus onClick={next}>
-            {index + 1 === questions.length ? "See score" : "Next"}
+            {index + 1 === questions.length ? t("test.seeScore") : t("test.next")}
           </Btn>
         </div>
       )}

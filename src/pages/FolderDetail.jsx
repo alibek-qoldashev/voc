@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { getDecksWithStats, getFolder, setDeckFolder } from "../lib/api";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  deleteDeck,
+  getDecksWithStats,
+  getFolder,
+  setDeckFolder,
+} from "../lib/api";
+import ItemMenu from "../components/ItemMenu";
+import FolderPicker from "../components/FolderPicker";
 import { Badge, Btn, ErrorBox, Spinner, btnClass } from "../components/ui";
 import { useLang } from "../lib/i18n";
 
@@ -53,6 +60,8 @@ export default function FolderDetail() {
   const [error, setError] = useState("");
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState("");
+  const [moving, setMoving] = useState(null); // "Add to folder" oynasidagi deck
+  const navigate = useNavigate();
   const { t } = useLang();
 
   useEffect(() => {
@@ -98,6 +107,26 @@ export default function FolderDetail() {
     }
   };
 
+  const removeDeck = async (deck) => {
+    if (
+      !window.confirm(
+        t("decks.deleteConfirm", { name: deck.name, count: deck.total }),
+      )
+    )
+      return;
+    try {
+      await deleteDeck(deck.id);
+      setDecks((ds) => ds.filter((d) => d.id !== deck.id));
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const moved = (deckId, folder) =>
+    setDecks((ds) =>
+      ds.map((d) => (d.id === deckId ? { ...d, folder_id: folder } : d)),
+    );
+
   return (
     <div>
       <Link to="/folders" className="text-sm text-mist hover:text-leaf">
@@ -142,9 +171,27 @@ export default function FolderDetail() {
             {inside.map((d) => (
               <li
                 key={d.id}
-                className="glass flex h-full flex-col gap-4 rounded-3xl p-5"
+                className="glass relative flex h-full flex-col gap-4 rounded-3xl p-5"
               >
-                <Link to={`/flashcards/deck/${d.id}`} className="block flex-1">
+                <div className="absolute right-3 top-3">
+                  <ItemMenu
+                    label={t("common.optionsFor", { name: d.name })}
+                    items={[
+                      {
+                        label: t("common.edit"),
+                        onClick: () => navigate(`/flashcards/deck/${d.id}?edit=1`),
+                      },
+                      { label: t("folder.addTo"), onClick: () => setMoving(d) },
+                      { label: t("folder.remove"), onClick: () => remove(d.id) },
+                      {
+                        label: t("common.delete"),
+                        onClick: () => removeDeck(d),
+                        danger: true,
+                      },
+                    ]}
+                  />
+                </div>
+                <Link to={`/flashcards/deck/${d.id}`} className="block flex-1 pr-10">
                   <h3 className="text-xl font-bold leading-snug">{d.name}</h3>
                   {d.description && (
                     <p className="mt-1 line-clamp-2 text-sm text-mist">
@@ -156,14 +203,6 @@ export default function FolderDetail() {
                     {t("count.termsTotal", { count: d.total })}
                   </p>
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => remove(d.id)}
-                  disabled={busy === d.id}
-                  className="text-left text-xs text-mist underline hover:text-rose"
-                >
-                  {t("folder.remove")}
-                </button>
               </li>
             ))}
           </ul>
@@ -231,6 +270,14 @@ export default function FolderDetail() {
             </>
           )}
         </section>
+      )}
+
+      {moving && (
+        <FolderPicker
+          deck={moving}
+          onChange={(folder) => moved(moving.id, folder)}
+          onClose={() => setMoving(null)}
+        />
       )}
     </div>
   );

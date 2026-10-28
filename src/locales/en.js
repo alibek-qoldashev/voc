@@ -409,4 +409,11 @@ export default {
   "auth.accept": "I have read and accept the {link}.",
   "auth.privacyLink": "Privacy Policy",
   "auth.googleDisabled": "Google sign-in is not turned on yet. Use your email or username for now.",
+  "sort.title": "Sort by",
+  "sort.label": "Sort: {by}",
+  "sort.name": "Name",
+  "sort.created": "Date created",
+  "sort.size": "Size",
+  "folder.addTo": "Add to folder",
+  "folder.pickHint": "Tick a folder to move \"{name}\" there. Untick it to take the deck out.",
 };

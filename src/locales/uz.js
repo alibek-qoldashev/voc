@@ -409,4 +409,11 @@ export default {
   "auth.accept": "{link}ni o'qidim va qabul qilaman.",
   "auth.privacyLink": "Maxfiylik siyosati",
   "auth.googleDisabled": "Google orqali kirish hali yoqilmagan. Hozircha email yoki username bilan kiring.",
+  "sort.title": "Saralash",
+  "sort.label": "Saralash: {by}",
+  "sort.name": "Nomi",
+  "sort.created": "Yaratilgan sana",
+  "sort.size": "Hajmi",
+  "folder.addTo": "Papkaga qo'shish",
+  "folder.pickHint": "\"{name}\"ni ko'chirish uchun papkani belgilang. Papkadan chiqarish uchun belgini olib tashlang.",
 };

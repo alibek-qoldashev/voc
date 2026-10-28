@@ -409,4 +409,11 @@ export default {
   "auth.accept": "Я прочитал(а) и принимаю {link}.",
   "auth.privacyLink": "Политику конфиденциальности",
   "auth.googleDisabled": "Вход через Google пока не включён. Пока войдите по email или логину.",
+  "sort.title": "Сортировка",
+  "sort.label": "Сортировка: {by}",
+  "sort.name": "Название",
+  "sort.created": "Дата создания",
+  "sort.size": "Размер",
+  "folder.addTo": "Добавить в папку",
+  "folder.pickHint": "Отметьте папку, чтобы переместить «{name}» туда. Снимите отметку, чтобы убрать набор из папки.",
 };

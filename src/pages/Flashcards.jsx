@@ -9,6 +9,8 @@ import {
 } from "../lib/api";
 import CreateMenu from "../components/CreateMenu";
 import ItemMenu from "../components/ItemMenu";
+import SortMenu, { SORTS, sortDecks } from "../components/SortMenu";
+import { load as loadPref, save as savePref } from "../lib/storage";
 import {
   Badge,
   ErrorBox,
@@ -62,7 +64,16 @@ export default function Flashcards() {
   const [newLeft, setNewLeft] = useState(0);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState(() => {
+    const saved = loadPref("deck-sort", "name");
+    return SORTS.includes(saved) ? saved : "name";
+  });
   const { t } = useLang();
+
+  const changeSort = (s) => {
+    setSortBy(s);
+    savePref("deck-sort", s);
+  };
 
   const load = () =>
     Promise.all([getDecksWithStats(), getNewLeft()])
@@ -85,11 +96,14 @@ export default function Flashcards() {
   const today = due + learn + Math.min(newLeft, fresh);
 
   const q = query.trim().toLowerCase();
-  const shown = decks.filter(
-    (d) =>
-      !q ||
-      d.name.toLowerCase().includes(q) ||
-      (d.description || "").toLowerCase().includes(q),
+  const shown = sortDecks(
+    decks.filter(
+      (d) =>
+        !q ||
+        d.name.toLowerCase().includes(q) ||
+        (d.description || "").toLowerCase().includes(q),
+    ),
+    sortBy,
   );
 
   const pin = async (deck) => {
@@ -171,13 +185,16 @@ export default function Flashcards() {
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-extrabold">{t("decks.yours")}</h2>
-            <input
-              className={`${fieldCls} max-w-xs`}
-              placeholder={t("decks.search")}
-              aria-label={t("decks.search")}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <SortMenu value={sortBy} onChange={changeSort} />
+              <input
+                className={`${fieldCls} min-w-0 flex-1 sm:w-72 sm:flex-none`}
+                placeholder={t("decks.search")}
+                aria-label={t("decks.search")}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
           </div>
 
           {shown.length === 0 ? (

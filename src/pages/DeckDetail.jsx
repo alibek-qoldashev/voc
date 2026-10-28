@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   addCards,
   deleteCard,
@@ -204,7 +204,9 @@ export default function DeckDetail() {
   const [cards, setCards] = useState([]);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [editMode, setEditMode] = useState(false);
+  const [searchParams] = useSearchParams();
+  // Papka sahifasidagi "Edit" -> ?edit=1 bilan to'g'ridan-to'g'ri tahrir rejimida ochiladi
+  const [editMode, setEditMode] = useState(searchParams.get("edit") === "1");
   const [selected, setSelected] = useState(() => new Set());
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({

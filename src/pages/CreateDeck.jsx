@@ -332,12 +332,25 @@ export default function CreateDeck() {
 
         <section>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-extrabold">{t("createDeck.terms")}</h2>
-            <ImportMenu
-              disabled={reading}
-              onManual={() => setManualOpen(true)}
-              onPhoto={() => photoRef.current?.click()}
-            />
+            <div>
+              <h2 className="text-xl font-extrabold">{t("createDeck.terms")}</h2>
+              <p className="text-sm text-mist">
+                {t("createDeck.ready", { count: filled.length })}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Btn type="submit" variant="glass" disabled={!name.trim()}>
+                {t("createDeck.create")}
+              </Btn>
+              <Btn disabled={!name.trim()} onClick={() => save(true)}>
+                {t("createDeck.createPractice")}
+              </Btn>
+              <ImportMenu
+                disabled={reading}
+                onManual={() => setManualOpen(true)}
+                onPhoto={() => photoRef.current?.click()}
+              />
+            </div>
             <input
               ref={photoRef}
               type="file"
@@ -346,6 +359,12 @@ export default function CreateDeck() {
               onChange={importPhoto}
             />
           </div>
+
+          {error && (
+            <div className="mb-5">
+              <ErrorBox>{error}</ErrorBox>
+            </div>
+          )}
 
           {reading && (
             <div className="glass mb-5 rounded-3xl px-5">
@@ -463,28 +482,6 @@ export default function CreateDeck() {
           </button>
         </section>
 
-        <ErrorBox>{error}</ErrorBox>
-
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <p className="mr-auto text-sm text-mist">
-            {t("createDeck.ready", { count: filled.length })}
-          </p>
-          <Btn
-            type="submit"
-            variant="glass"
-            disabled={!name.trim()}
-            className="px-8 py-3.5"
-          >
-            {t("createDeck.create")}
-          </Btn>
-          <Btn
-            disabled={!name.trim()}
-            onClick={() => save(true)}
-            className="px-8 py-3.5"
-          >
-            {t("createDeck.createPractice")}
-          </Btn>
-        </div>
       </form>
     </div>
   );

@@ -10,6 +10,7 @@ import ItemMenu from "../components/ItemMenu";
 import SortMenu, { SORTS, sortDecks } from "../components/SortMenu";
 import { load as loadPref, save as savePref } from "../lib/storage";
 import FolderPicker from "../components/FolderPicker";
+import { EXAM_MIN_WORDS } from "./FolderExam";
 import { Badge, Btn, ErrorBox, Spinner, btnClass } from "../components/ui";
 import { useLang } from "../lib/i18n";
 
@@ -91,6 +92,7 @@ export default function FolderDetail() {
     decks.filter((d) => d.folder_id === folderId),
     sortBy,
   );
+  const totalWords = inside.reduce((s, d) => s + (d.total ?? 0), 0);
   const outside = decks.filter((d) => d.folder_id !== folderId);
 
   const add = async (deckId) => {
@@ -159,7 +161,26 @@ export default function FolderDetail() {
             </Badge>
           </div>
         </div>
-        {inside.length > 1 && <SortMenu value={sortBy} onChange={changeSort} />}
+        {inside.length > 0 && (
+          <div className="flex items-center gap-2">
+            {totalWords >= EXAM_MIN_WORDS ? (
+              <Link
+                to={`/folders/${folderId}/exam`}
+                className={btnClass("primary", "h-[46px]")}
+              >
+                {t("exam.studyAll")}
+              </Link>
+            ) : (
+              <span
+                title={t("exam.needs", { count: EXAM_MIN_WORDS })}
+                className={btnClass("primary", "h-[46px] cursor-not-allowed opacity-40")}
+              >
+                {t("exam.studyAll")}
+              </span>
+            )}
+            {inside.length > 1 && <SortMenu value={sortBy} onChange={changeSort} />}
+          </div>
+        )}
       </div>
 
       <ErrorBox>{error}</ErrorBox>

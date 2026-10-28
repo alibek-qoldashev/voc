@@ -427,3 +427,21 @@ export async function extractWordsFromPhoto(file) {
   if (data?.error) throw new Error(data.error);
   return data.cards ?? [];
 }
+
+// Papka ichidagi barcha decklarning kartalari (papka imtihoni uchun)
+export async function getFolderCards(folderId) {
+  const decks = await supabase
+    .from("decks")
+    .select("id")
+    .eq("folder_id", folderId)
+    .then(must);
+  if (!decks.length) return [];
+  return supabase
+    .from("cards")
+    .select("*")
+    .in(
+      "deck_id",
+      decks.map((d) => d.id),
+    )
+    .then(must);
+}

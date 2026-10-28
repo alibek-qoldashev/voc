@@ -12,6 +12,7 @@ import FlashcardSession from "./pages/FlashcardSession";
 import Profile from "./pages/Profile";
 import CreateDeck from "./pages/CreateDeck";
 import FolderDetail from "./pages/FolderDetail";
+import FolderExam from "./pages/FolderExam";
 import Info from "./pages/Info";
 import AuthCallback from "./pages/AuthCallback";
 import ResetPassword from "./pages/ResetPassword";
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/folders" element={<Folders />} />
           <Route path="/folders/:folderId" element={<FolderDetail />} />
+          <Route path="/folders/:folderId/exam" element={<FolderExam />} />
           <Route path="/library/:folderId" element={<FolderDetail />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/flashcards/deck/:deckId" element={<DeckDetail />} />

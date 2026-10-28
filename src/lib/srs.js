@@ -1,126 +1,64 @@
-// Anki uslubidagi oraliqli takrorlash: learning steps + SM-2
+// SM-2 oraliqli takrorlash.
+// Har karta uchun: EF (osonlik koeffitsiyenti), I (oraliq, kun), q (javob sifati).
+//   Birinchi muvaffaqiyatli takrorlash: I = 1 kun
+//   Keyingilari:                        I_n = I_{n-1} * EF
+//   EF yangilanishi:                    EF' = EF + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)), kamida 1.3
+//   q < 3 (Again):                      karta qaytadan boshlanadi, sessiya ichida yana ko'rsatiladi
+// Masalan EF = 2.5 va har safar Good: 1 -> 2.5 -> 6.25 -> 15.625 -> 39.06 kun.
 const MIN = 60 * 1000;
 const DAY = 24 * 60 * MIN;
 
-// Yangi so'z shu bosqichlardan o'tadi, so'ng "review" ga chiqadi.
-// Ya'ni bitta so'z sessiya ichida kamida ikki marta ko'rsatiladi.
-const LEARN_STEPS = [1 * MIN, 10 * MIN];
+export const START_EF = 2.5;
+const MIN_EF = 1.3;
+const FIRST_INTERVAL = 1; // kun
+// "Again" bosilgan karta shu vaqtdan keyin sessiyada yana chiqadi
+const RETRY_DELAY = 1 * MIN;
 
-// Bosqichlar tugaganda beriladigan birinchi oraliq
-const GRADUATING_INTERVAL = 1; // kun
-const EASY_INTERVAL = 4; // kun ("Easy" bosilsa, bosqichlarni o'tkazib yuboradi)
-
-// Xatodan keyin qaytish bosqichi
-const RELEARN_STEP = 10 * MIN;
-
+// Tugmalar va ularning SM-2 sifat bahosi (q, 0–5 shkala)
 export const RATINGS = [
-  { id: 0, label: "Again", key: "1" },
-  { id: 1, label: "Hard", key: "2" },
-  { id: 2, label: "Good", key: "3" },
-  { id: 3, label: "Easy", key: "4" },
+  { id: 0, label: "Again", key: "1", q: 1 },
+  { id: 1, label: "Hard", key: "2", q: 3 },
+  { id: 2, label: "Good", key: "3", q: 4 },
+  { id: 3, label: "Easy", key: "4", q: 5 },
 ];
 
+export const nextEase = (ef, q) =>
+  Math.max(MIN_EF, ef + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)));
+
 export function schedule(srs, rating, now = Date.now()) {
-  let { state, ease, interval, reps, lapses, step = 0 } = srs;
-  reps += 1;
+  const { q } = RATINGS[rating];
+  const ef = srs.ease || START_EF;
+  const ease = nextEase(ef, q);
+  const reps = (srs.reps || 0) + 1;
 
-  // --- Takrorlash bosqichi (review) ---
-  if (state === "review") {
-    if (rating === 0) {
-      // Unutildi: so'z yana o'rganish bosqichiga qaytadi
-      lapses += 1;
-      ease = Math.max(1.3, ease - 0.2);
-      interval = Math.max(1, Math.round(interval * 0.5));
-      return {
-        state: "learning",
-        ease,
-        interval,
-        reps,
-        lapses,
-        step: 0,
-        due: now + RELEARN_STEP,
-      };
-    }
-    if (rating === 1) {
-      ease = Math.max(1.3, ease - 0.15);
-      interval = Math.max(interval + 1, Math.round(interval * 1.2));
-    } else if (rating === 2) {
-      interval = Math.max(interval + 1, Math.round(interval * ease));
-    } else {
-      ease += 0.15;
-      interval = Math.max(interval + 1, Math.round(interval * ease * 1.3));
-    }
-    return {
-      state: "review",
-      ease,
-      interval,
-      reps,
-      lapses,
-      step: 0,
-      due: now + interval * DAY,
-    };
-  }
-
-  // --- Yangi yoki o'rganish bosqichi ---
-  if (rating === 3) {
-    // Easy: bosqichlarni o'tkazib, to'g'ridan-to'g'ri takrorlashga
-    return {
-      state: "review",
-      ease,
-      interval: EASY_INTERVAL,
-      reps,
-      lapses,
-      step: 0,
-      due: now + EASY_INTERVAL * DAY,
-    };
-  }
-  if (rating === 0) {
-    // Again: birinchi bosqichga qaytadi
+  if (q < 3) {
+    // Unutildi: takrorlashlar qatori uziladi, keyingi muvaffaqiyatda yana 1 kundan boshlanadi
     return {
       state: "learning",
       ease,
-      interval,
+      interval: 0,
       reps,
-      lapses,
+      lapses: (srs.lapses || 0) + (srs.state === "review" ? 1 : 0),
       step: 0,
-      due: now + LEARN_STEPS[0],
-    };
-  }
-  if (rating === 1) {
-    // Hard: shu bosqich qaytariladi
-    return {
-      state: "learning",
-      ease,
-      interval,
-      reps,
-      lapses,
-      step,
-      due: now + LEARN_STEPS[Math.min(step, LEARN_STEPS.length - 1)],
+      due: now + RETRY_DELAY,
     };
   }
 
-  // Good: keyingi bosqichga
-  const nextStep = step + 1;
-  if (nextStep < LEARN_STEPS.length) {
-    return {
-      state: "learning",
-      ease,
-      interval,
-      reps,
-      lapses,
-      step: nextStep,
-      due: now + LEARN_STEPS[nextStep],
-    };
-  }
-  // Bosqichlar tugadi: so'z endi takrorlash jadvaliga o'tadi
+  // Avval muvaffaqiyatli takrorlangan bo'lsa I_n = I_{n-1} * EF, aks holda boshlang'ich 1 kun.
+  // Yangilangan EF ishlatiladi: Good'da EF o'zgarmaydi (jadvaldagidek), Hard qisqaroq, Easy uzunroq oraliq beradi.
+  const interval =
+    srs.state === "review" && srs.interval > 0
+      ? srs.interval * ease
+      : FIRST_INTERVAL;
+
   return {
     state: "review",
     ease,
-    interval: GRADUATING_INTERVAL,
+    interval,
     reps,
-    lapses,
+    lapses: srs.lapses || 0,
     step: 0,
-    due: now + GRADUATING_INTERVAL * DAY,
+    due: now + interval * DAY,
   };
 }
 
@@ -131,8 +69,10 @@ export function fmtInterval(ms, t = (k, v) => `${v.n} ${k.slice(5)}`) {
   if (min < 60) return t("unit.min", { n: min });
   const h = Math.round(min / 60);
   if (h < 24) return t("unit.h", { n: h });
-  const d = Math.round(ms / DAY);
-  if (d < 30) return t("unit.d", { n: d });
+  // 30 kundan kam oraliqlar o'nli kasr bilan (2.5 kun, 15.6 kun), aks holda tugmalar bir xil ko'rinadi
+  const days = ms / DAY;
+  if (days < 30) return t("unit.d", { n: Number(days.toFixed(1)) });
+  const d = Math.round(days);
   if (d < 365) return t("unit.mo", { n: Math.round(d / 30) });
   return t("unit.y", { n: (d / 365).toFixed(1) });
 }

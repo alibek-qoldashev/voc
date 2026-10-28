@@ -84,7 +84,7 @@ const CONTENT = {
         },
         {
           h: "What do Again, Hard, Good and Easy mean?",
-          p: "They tell Anki mode how well you knew the card. Again shows it again soon, Easy pushes it furthest into the future.",
+          p: "Anki mode uses the SM-2 algorithm. Each card has an ease factor (EF, 2.5 at the start). The first review after learning is 1 day later, then every next interval is the previous one times EF: 1 → 2.5 → 6.25 → 15.6 days. Good keeps EF, Easy raises it, Hard lowers it, and Again starts the card over.",
         },
         {
           h: "How do starred words work?",
@@ -110,7 +110,7 @@ const CONTENT = {
         },
         {
           h: "Что значат Again, Hard, Good и Easy?",
-          p: "Так вы сообщаете режиму Anki, насколько хорошо знали карточку. Again покажет её скоро, Easy отложит дальше всего.",
+          p: "Режим Anki работает по алгоритму SM-2. У каждой карточки есть коэффициент лёгкости (EF, вначале 2.5). Первое повторение — через 1 день, каждый следующий интервал равен предыдущему, умноженному на EF: 1 → 2.5 → 6.25 → 15.6 дня. Good сохраняет EF, Easy повышает, Hard понижает, а Again начинает карточку заново.",
         },
         {
           h: "Как работают избранные слова?",
@@ -136,7 +136,7 @@ const CONTENT = {
         },
         {
           h: "Again, Hard, Good va Easy nimani bildiradi?",
-          p: "Ular Anki rejimiga kartani qanchalik bilganingizni aytadi. Again uni tez orada qayta ko'rsatadi, Easy esa eng uzoqqa suradi.",
+          p: "Anki rejimi SM-2 algoritmi bilan ishlaydi. Har bir kartaning osonlik koeffitsiyenti bor (EF, boshida 2.5). Birinchi takrorlash 1 kundan keyin, har bir keyingi oraliq esa oldingisini EF ga ko'paytirib topiladi: 1 → 2.5 → 6.25 → 15.6 kun. Good EF ni saqlaydi, Easy oshiradi, Hard kamaytiradi, Again esa kartani boshidan boshlaydi.",
         },
         {
           h: "Yulduzchali so'zlar qanday ishlaydi?",

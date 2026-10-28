@@ -1,0 +1,13 @@
+{
+  "name": "VOC — so'z yodlash",
+  "short_name": "VOC",
+  "start_url": "/home",
+  "display": "standalone",
+  "background_color": "#000824",
+  "theme_color": "#55b435",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

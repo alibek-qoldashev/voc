@@ -7,6 +7,8 @@ import {
   setDeckFolder,
 } from "../lib/api";
 import ItemMenu from "../components/ItemMenu";
+import SortMenu, { SORTS, sortDecks } from "../components/SortMenu";
+import { load as loadPref, save as savePref } from "../lib/storage";
 import FolderPicker from "../components/FolderPicker";
 import { Badge, Btn, ErrorBox, Spinner, btnClass } from "../components/ui";
 import { useLang } from "../lib/i18n";
@@ -61,6 +63,15 @@ export default function FolderDetail() {
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState("");
   const [moving, setMoving] = useState(null); // "Add to folder" oynasidagi deck
+  // Flashcards sahifasi bilan bir xil saralash tanlovi
+  const [sortBy, setSortBy] = useState(() => {
+    const saved = loadPref("deck-sort", "name");
+    return SORTS.includes(saved) ? saved : "name";
+  });
+  const changeSort = (s) => {
+    setSortBy(s);
+    savePref("deck-sort", s);
+  };
   const navigate = useNavigate();
   const { t } = useLang();
 
@@ -76,7 +87,10 @@ export default function FolderDetail() {
   if (error && !folder) return <ErrorBox>{error}</ErrorBox>;
   if (!folder || !decks) return <Spinner />;
 
-  const inside = decks.filter((d) => d.folder_id === folderId);
+  const inside = sortDecks(
+    decks.filter((d) => d.folder_id === folderId),
+    sortBy,
+  );
   const outside = decks.filter((d) => d.folder_id !== folderId);
 
   const add = async (deckId) => {
@@ -133,16 +147,19 @@ export default function FolderDetail() {
         ← {t("nav.folders")}
       </Link>
 
-      <div className="mb-8 mt-2">
-        <h1 className="text-3xl font-extrabold">{folder.name}</h1>
-        {folder.description && (
-          <p className="mt-1 text-mist">{folder.description}</p>
-        )}
-        <div className="mt-2">
-          <Badge>
-            {t("count.decks", { count: inside.length })}
-          </Badge>
+      <div className="mb-8 mt-2 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold">{folder.name}</h1>
+          {folder.description && (
+            <p className="mt-1 text-mist">{folder.description}</p>
+          )}
+          <div className="mt-2">
+            <Badge>
+              {t("count.decks", { count: inside.length })}
+            </Badge>
+          </div>
         </div>
+        {inside.length > 1 && <SortMenu value={sortBy} onChange={changeSort} />}
       </div>
 
       <ErrorBox>{error}</ErrorBox>

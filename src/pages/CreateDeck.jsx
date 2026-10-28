@@ -122,9 +122,10 @@ function ImportMenu({ onManual, onPhoto, disabled }) {
     };
   }, [open]);
 
+  // Photo hozircha o'chiq: AI chaqiruvlari uchun foydalanuvchi limiti qo'yilgach yoqiladi
   const options = [
     { id: "manual", icon: ICONS.text, run: onManual },
-    { id: "photo", icon: ICONS.camera, run: onPhoto },
+    { id: "photo", icon: ICONS.camera, run: onPhoto, upcoming: true },
   ];
 
   return (
@@ -150,21 +151,34 @@ function ImportMenu({ onManual, onPhoto, disabled }) {
               key={o.id}
               type="button"
               role="menuitem"
+              disabled={o.upcoming}
+              aria-disabled={o.upcoming}
               onClick={() => {
                 setOpen(false);
                 o.run();
               }}
-              className="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-white/10"
+              className="relative flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left hover:bg-white/10 disabled:cursor-not-allowed disabled:hover:bg-transparent"
             >
-              <span className="mt-0.5 text-leaf">
-                <Icon d={o.icon} size={20} />
-              </span>
-              <span>
-                <span className="block font-semibold">{t(`import.${o.id}`)}</span>
-                <span className="block text-xs text-mist">
-                  {t(`import.${o.id}Hint`)}
+              <span
+                className={`flex items-start gap-3 ${
+                  o.upcoming ? "opacity-40 blur-[1.5px] grayscale" : ""
+                }`}
+              >
+                <span className="mt-0.5 text-leaf">
+                  <Icon d={o.icon} size={20} />
+                </span>
+                <span>
+                  <span className="block font-semibold">{t(`import.${o.id}`)}</span>
+                  <span className="block text-xs text-mist">
+                    {t(`import.${o.id}Hint`)}
+                  </span>
                 </span>
               </span>
+              {o.upcoming && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+                  {t("import.upcoming")}
+                </span>
+              )}
             </button>
           ))}
         </div>

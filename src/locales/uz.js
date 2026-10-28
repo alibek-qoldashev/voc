@@ -416,4 +416,5 @@ export default {
   "sort.size": "Hajmi",
   "folder.addTo": "Papkaga qo'shish",
   "folder.pickHint": "\"{name}\"ni ko'chirish uchun papkani belgilang. Papkadan chiqarish uchun belgini olib tashlang.",
+  "import.upcoming": "Tez orada",
 };

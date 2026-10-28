@@ -416,4 +416,5 @@ export default {
   "sort.size": "Size",
   "folder.addTo": "Add to folder",
   "folder.pickHint": "Tick a folder to move \"{name}\" there. Untick it to take the deck out.",
+  "import.upcoming": "Upcoming",
 };

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getStudyQueue, gradeCard } from "../lib/api";
+import { countNewCards, getStudyQueue, gradeCard } from "../lib/api";
 import {
   LEARN_AGAIN_WINDOW,
   RATINGS,
@@ -37,15 +37,19 @@ export default function FlashcardSession() {
   const [done, setDone] = useState(0);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState("");
+  // Kunlik limit tufayli bugun navbatga tushmagan yangi kartalar soni
+  const [waiting, setWaiting] = useState(0);
 
   useEffect(() => {
     let alive = true;
-    getStudyQueue(deckId)
-      .then((all) => {
+    Promise.all([getStudyQueue(deckId), countNewCards(deckId)])
+      .then(([all, newTotal]) => {
         const items = order(filter(all, (i) => i.card.id));
+        const newInQueue = all.filter((i) => i.card.srs_state === "new").length;
         if (alive) {
           setQueue(items);
           setTotal(items.length);
+          setWaiting(Math.max(0, newTotal - newInQueue));
         }
       })
       .catch((e) => alive && setError(e.message));
@@ -53,6 +57,21 @@ export default function FlashcardSession() {
       alive = false;
     };
   }, [deckId]);
+
+  // Limitdan tashqari: kutib turgan yangi kartalarni hozir o'qish
+  const studyWaiting = async () => {
+    try {
+      const extra = await getStudyQueue(deckId, { extraNew: waiting });
+      const items = order(
+        filter(extra, (i) => i.card.id).filter((i) => i.card.srs_state === "new"),
+      );
+      setQueue(items);
+      setTotal((n) => n + items.length);
+      setWaiting(0);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
 
   const current = queue?.[0];
 
@@ -114,15 +133,34 @@ export default function FlashcardSession() {
         <ErrorBox>{error}</ErrorBox>
         <div className="glass mt-4 rounded-3xl p-10 text-center">
           <h1 className="text-3xl font-extrabold">
-            {total ? t("anki.complete") : t("anki.nothing")}
+            {waiting > 0
+              ? t("anki.limitTitle")
+              : total
+                ? t("anki.complete")
+                : t("anki.nothing")}
           </h1>
-          <p className="mt-3 text-mist">
-            {total
-              ? t("anki.answered", { count: done })
-              : t("anki.nothingHint")}
-          </p>
-          <div className="mt-8 flex justify-center gap-3">
-            <Btn onClick={() => navigate(back)}>{t("common.done")}</Btn>
+          {total > 0 && (
+            <p className="mt-3 text-mist">{t("anki.answered", { count: done })}</p>
+          )}
+          {waiting > 0 ? (
+            <p className="mt-3 text-mist">
+              {t("anki.limitHint", { count: waiting })}
+            </p>
+          ) : (
+            !total && <p className="mt-3 text-mist">{t("anki.nothingHint")}</p>
+          )}
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            {waiting > 0 && (
+              <Btn onClick={studyWaiting}>
+                {t("anki.studyWaiting", { count: waiting })}
+              </Btn>
+            )}
+            <Btn
+              variant={waiting > 0 ? "glass" : "primary"}
+              onClick={() => navigate(back)}
+            >
+              {t("common.done")}
+            </Btn>
             <Link to="/home" className={btnClass("glass")}>
               {t("nav.home")}
             </Link>

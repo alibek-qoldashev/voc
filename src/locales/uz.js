@@ -436,4 +436,13 @@ export default {
   "exam.needs_few": "Imtihon uchun papkada ta'rifi bor kamida {count} ta so'z kerak.",
   "exam.needs_many": "Imtihon uchun papkada ta'rifi bor kamida {count} ta so'z kerak.",
   "exam.needs_other": "Imtihon uchun papkada ta'rifi bor kamida {count} ta so'z kerak.",
+  "anki.limitTitle": "Kunlik yangi kartalar limiti tugadi",
+  "anki.limitHint_one": "{count} ta yangi karta ertangi kunni kutyapti. Ularni hozir ham o'qishingiz yoki Profilda kunlik limitni o'zgartirishingiz mumkin.",
+  "anki.limitHint_few": "{count} ta yangi karta ertangi kunni kutyapti. Ularni hozir ham o'qishingiz yoki Profilda kunlik limitni o'zgartirishingiz mumkin.",
+  "anki.limitHint_many": "{count} ta yangi karta ertangi kunni kutyapti. Ularni hozir ham o'qishingiz yoki Profilda kunlik limitni o'zgartirishingiz mumkin.",
+  "anki.limitHint_other": "{count} ta yangi karta ertangi kunni kutyapti. Ularni hozir ham o'qishingiz yoki Profilda kunlik limitni o'zgartirishingiz mumkin.",
+  "anki.studyWaiting_one": "Yana {count} tasini hozir o'qish",
+  "anki.studyWaiting_few": "Yana {count} tasini hozir o'qish",
+  "anki.studyWaiting_many": "Yana {count} tasini hozir o'qish",
+  "anki.studyWaiting_other": "Yana {count} tasini hozir o'qish",
 };

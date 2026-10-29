@@ -436,4 +436,13 @@ export default {
   "exam.needs_few": "The exam needs at least {count} words with a definition in this folder.",
   "exam.needs_many": "The exam needs at least {count} words with a definition in this folder.",
   "exam.needs_other": "The exam needs at least {count} words with a definition in this folder.",
+  "anki.limitTitle": "Daily new card limit reached",
+  "anki.limitHint_one": "{count} new card is waiting for tomorrow. You can study it now anyway, or change the daily limit in Profile.",
+  "anki.limitHint_few": "{count} new cards are waiting for tomorrow. You can study them now anyway, or change the daily limit in Profile.",
+  "anki.limitHint_many": "{count} new cards are waiting for tomorrow. You can study them now anyway, or change the daily limit in Profile.",
+  "anki.limitHint_other": "{count} new cards are waiting for tomorrow. You can study them now anyway, or change the daily limit in Profile.",
+  "anki.studyWaiting_one": "Study {count} more now",
+  "anki.studyWaiting_few": "Study {count} more now",
+  "anki.studyWaiting_many": "Study {count} more now",
+  "anki.studyWaiting_other": "Study {count} more now",
 };

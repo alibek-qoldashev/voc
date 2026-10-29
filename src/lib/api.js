@@ -147,9 +147,10 @@ export async function getNewLeft() {
   return Math.max(0, (profile?.new_per_day ?? 20) - (logs.count ?? 0));
 }
 
-// deckId: 'all' yoki deck id
-export async function getStudyQueue(deckId) {
-  const left = await getNewLeft();
+// deckId: 'all' yoki deck id.
+// extraNew: kunlik limit tugagan bo'lsa ham shuncha yangi kartani qo'shib beradi ("Hozir o'qish")
+export async function getStudyQueue(deckId, { extraNew = 0 } = {}) {
+  const left = extraNew || (await getNewLeft());
   let dueQ = supabase
     .from("cards")
     .select("*")
@@ -173,6 +174,18 @@ export async function getStudyQueue(deckId) {
     left > 0 ? newQ.then(must) : Promise.resolve([]),
   ]);
   return [...due, ...fresh].map((card) => ({ card, srs: srsFromRow(card) }));
+}
+
+// Deckdagi (yoki hamma decklardagi) hali o'rganilmagan yangi kartalar soni
+export async function countNewCards(deckId) {
+  let q = supabase
+    .from("cards")
+    .select("id", { count: "exact", head: true })
+    .eq("srs_state", "new");
+  if (deckId !== "all") q = q.eq("deck_id", deckId);
+  const { count, error } = await q;
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export async function gradeCard({ card, srs, rating, wasNew }) {

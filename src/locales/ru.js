@@ -445,4 +445,5 @@ export default {
   "anki.studyWaiting_few": "Учить ещё {count} сейчас",
   "anki.studyWaiting_many": "Учить ещё {count} сейчас",
   "anki.studyWaiting_other": "Учить ещё {count} сейчас",
+  "match.finished": "Готово!",
 };

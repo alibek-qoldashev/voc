@@ -4,7 +4,7 @@ import { getCards, logPractice } from "../lib/api";
 import { shuffle } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
-import { Btn, ErrorBox, Spinner } from "../components/ui";
+import { Btn, ErrorBox, Spinner, btnClass } from "../components/ui";
 
 const PAIRS = 6;
 
@@ -125,33 +125,35 @@ export default function StudyMatch() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-5 flex items-center justify-end gap-3">
-        <span className="font-bold tabular-nums">
-          {t("match.sec", { n: sec(elapsed) })}
-        </span>
-      </div>
+      {!finished && (
+        <div className="mb-5 flex items-center justify-end gap-3">
+          <span className="font-bold tabular-nums">
+            {t("match.sec", { n: sec(elapsed) })}
+          </span>
+        </div>
+      )}
 
       {finished && (
-        <div className="glass mb-6 rounded-3xl p-7 text-center" role="status">
-          <p className="text-3xl font-extrabold text-leaf">
-            {t("match.seconds", { n: sec(elapsed) })}
+        <div className="glass mx-auto max-w-xl rounded-3xl p-10 text-center" role="status">
+          <h1 className="text-3xl font-extrabold">{t("match.finished")}</h1>
+          <p className="mt-4 text-6xl font-extrabold tabular-nums text-leaf">
+            {t("match.sec", { n: sec(elapsed) })}
           </p>
-          <p className="mt-2 text-mist">
+          <p className="mt-3 text-mist">
             {t("match.mistakes", { count: mistakes })}
           </p>
-          <div className="mt-5 flex justify-center gap-3">
-            <Btn onClick={restart}>{t("match.again")}</Btn>
-            <Link
-              to={`/flashcards/deck/${deckId}`}
-              className="self-center text-sm text-mist underline"
-            >
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link to={`/flashcards/deck/${deckId}`} className={btnClass("primary")}>
               {t("study.backToDeck")}
             </Link>
+            <Btn variant="glass" onClick={restart}>
+              {t("match.again")}
+            </Btn>
           </div>
         </div>
       )}
 
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <ul className={`grid grid-cols-2 gap-3 sm:grid-cols-3 ${finished ? "hidden" : ""}`}>
         {tiles.map((t) => {
           const isMatched = matched.has(t.pair);
           const isSel = selected === t.key;
@@ -181,9 +183,7 @@ export default function StudyMatch() {
           );
         })}
       </ul>
-      <p className="mt-4 text-sm text-mist">
-        {t("match.hint")}
-      </p>
+      {!finished && <p className="mt-4 text-sm text-mist">{t("match.hint")}</p>}
     </div>
   );
 }

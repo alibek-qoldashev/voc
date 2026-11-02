@@ -445,4 +445,5 @@ export default {
   "anki.studyWaiting_few": "Yana {count} tasini hozir o'qish",
   "anki.studyWaiting_many": "Yana {count} tasini hozir o'qish",
   "anki.studyWaiting_other": "Yana {count} tasini hozir o'qish",
+  "match.finished": "Tugadi!",
 };

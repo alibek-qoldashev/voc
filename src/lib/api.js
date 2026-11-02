@@ -206,14 +206,19 @@ export async function gradeCard({ card, srs, rating, wasNew }) {
   if (failed) throw failed.error;
 }
 
-// Match / Test / Writing uchun: javobni tarixga yozadi (SRS jadvalini o'zgartirmaydi)
+// Match / Test / Writing uchun: javobni tarixga yozadi (SRS jadvalini o'zgartirmaydi).
+// Haqiqiy Promise qaytaradi: Supabase so'rov obyektida .catch yo'q, chaqiruvchilar esa
+// logPractice(...).catch(...) deb ishlatadi
 export const logPractice = (deckId, cardId, correct) =>
-  supabase.from("review_logs").insert({
-    card_id: cardId,
-    deck_id: deckId,
-    rating: correct ? 2 : 0,
-    was_new: false,
-  });
+  supabase
+    .from("review_logs")
+    .insert({
+      card_id: cardId,
+      deck_id: deckId,
+      rating: correct ? 2 : 0,
+      was_new: false,
+    })
+    .then(must);
 
 // ---- Papkalar ----------------------------------------------------------
 export async function getFolders() {

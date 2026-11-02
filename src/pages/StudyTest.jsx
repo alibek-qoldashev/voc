@@ -7,6 +7,8 @@ import { useLang } from "../lib/i18n";
 import { Btn, ErrorBox, Spinner } from "../components/ui";
 
 const QUESTION_LIMIT = 20;
+// To'g'ri javobdan keyin keyingi savolga avtomatik o'tish; xatoda Continue tugmasi chiqadi
+const NEXT_RIGHT_MS = 800;
 
 export default function StudyTest() {
   const { deckId } = useParams();
@@ -46,6 +48,16 @@ export default function StudyTest() {
     if (asked) say(definitionOnly(asked));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asked?.id, round]);
+
+  const pickedRight = picked && picked === asked?.id;
+  useEffect(() => {
+    if (!pickedRight) return;
+    const timer = setTimeout(() => {
+      setPicked(null);
+      setIndex((i) => i + 1);
+    }, NEXT_RIGHT_MS);
+    return () => clearTimeout(timer);
+  }, [pickedRight, index]);
 
   if (error) return <ErrorBox>{error}</ErrorBox>;
   if (!cards) return <Spinner label={t("test.building")} />;
@@ -174,9 +186,13 @@ export default function StudyTest() {
               ? t("study.correct")
               : t("test.correctAnswer", { term: q.card.term })}
           </p>
-          <Btn autoFocus onClick={next}>
-            {index + 1 === questions.length ? t("test.seeScore") : t("test.next")}
-          </Btn>
+          {picked !== q.card.id && (
+            <Btn autoFocus onClick={next}>
+              {index + 1 === questions.length
+                ? t("test.seeScore")
+                : t("common.continue")}
+            </Btn>
+          )}
         </div>
       )}
     </div>

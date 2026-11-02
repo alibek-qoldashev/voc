@@ -13,6 +13,11 @@ const RETRY_GAP = 3;
 // Learn da faqat inglizcha ta'rif ko'rsatiladi (chiziqchadan keyingi tarjimasiz)
 const answerOf = definitionOnly;
 
+// Javobdan keyin keyingi savolga avtomatik o'tish: to'g'ri bo'lsa tezroq,
+// xato (yoki imlo xatosi bilan qabul qilingan) bo'lsa to'g'ri javobni o'qishga vaqt
+const NEXT_RIGHT_MS = 800;
+const NEXT_WRONG_MS = 1500;
+
 // Karta holati: 0 — hali o'rganilmagan, oxirgi bosqichdan o'tsa — o'zlashtirilgan
 const statusOf = (level, done) =>
   level >= done ? "mastered" : level > 0 ? "familiar" : "new";
@@ -33,6 +38,13 @@ function buildRound(cards, levels, done, misses, order) {
 
 function Feedback({ correct, card, near, onNext }) {
   const { t } = useLang();
+  const next = useRef(onNext);
+  next.current = onNext;
+  useEffect(() => {
+    const ms = correct && !near ? NEXT_RIGHT_MS : NEXT_WRONG_MS;
+    const timer = setTimeout(() => next.current(), ms);
+    return () => clearTimeout(timer);
+  }, [correct, near]);
   return (
     <div
       role="status"
@@ -53,9 +65,6 @@ function Feedback({ correct, card, near, onNext }) {
           </p>
         )}
       </div>
-      <Btn autoFocus onClick={onNext}>
-        {t("common.continue")}
-      </Btn>
     </div>
   );
 }

@@ -233,8 +233,14 @@ export default function StudyLayout() {
     const next = { ...settings, ...patch };
     setSettings(next);
     save(STUDY_SETTINGS_KEY, next);
-    // Ovozdan boshqa sozlamalar savollarni o'zgartiradi, shuning uchun qaytadan boshlaymiz
-    if (!("tts" in patch && Object.keys(patch).length === 1)) setRunKey((k) => k + 1);
+    // Ovozdan boshqa sozlamalar savollarni o'zgartiradi, shuning uchun qaytadan boshlaymiz.
+    // Anki'da aralashtirish qayta boshlamaydi: sessiya qolgan navbatni o'zi qayta tartiblaydi,
+    // aks holda daqiqalik qadamdagi kartalar va kunlik limit tufayli navbat qisqarib qolardi
+    const keys = Object.keys(patch);
+    const keepRun =
+      keys.length === 1 &&
+      (keys[0] === "tts" || (keys[0] === "shuffle" && mode === "standard"));
+    if (!keepRun) setRunKey((k) => k + 1);
   };
 
   return (

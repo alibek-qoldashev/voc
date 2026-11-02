@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { dayKey, WEEKDAYS } from "./utils";
+import { LEARN_AGAIN_WINDOW } from "./srs";
 
 const must = ({ data, error }) => {
   if (error) throw error;
@@ -151,11 +152,13 @@ export async function getNewLeft() {
 // extraNew: kunlik limit tugagan bo'lsa ham shuncha yangi kartani qo'shib beradi ("Hozir o'qish")
 export async function getStudyQueue(deckId, { extraNew = 0 } = {}) {
   const left = extraNew || (await getNewLeft());
+  // Daqiqalik qadamdagi kartalar vaqti biroz oldinroq bo'lsa ham olinadi (Anki'dagi "learn ahead"),
+  // shunda sahifa qayta ochilganda ular navbatdan yo'qolib qolmaydi
   let dueQ = supabase
     .from("cards")
     .select("*")
     .neq("srs_state", "new")
-    .lte("due", new Date().toISOString())
+    .lte("due", new Date(Date.now() + LEARN_AGAIN_WINDOW).toISOString())
     .order("due", { ascending: true })
     .limit(200);
   let newQ = supabase

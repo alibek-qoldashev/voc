@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { countNewCards, getStudyQueue, gradeCard } from "../lib/api";
 import {
@@ -7,7 +7,7 @@ import {
   previewLabels,
   schedule,
 } from "../lib/srs";
-import { maskTerm, speak } from "../lib/utils";
+import { maskTerm, shuffle, speak } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import {
@@ -28,6 +28,9 @@ const COUNTERS = [
 
 const RATE_KEYS = ["again", "hard", "good", "easy"];
 
+// Qayta chiqadigan karta navbatda kamida shuncha kartadan keyin turadi
+const REQUEUE_GAP = 3;
+
 const rateStyle = [
   "border-rose/50 text-rose hover:bg-rose/10",
   "border-amber/50 text-amber hover:bg-amber/10",
@@ -38,7 +41,7 @@ const rateStyle = [
 export default function FlashcardSession() {
   const { deckId } = useParams();
   const navigate = useNavigate();
-  const { filter, order, say } = useStudy();
+  const { settings, filter, order, say } = useStudy();
   const { t } = useLang();
   const [queue, setQueue] = useState(null);
   const [flipped, setFlipped] = useState(false);
@@ -48,6 +51,9 @@ export default function FlashcardSession() {
   const [error, setError] = useState("");
   // Kunlik limit tufayli bugun navbatga tushmagan yangi kartalar soni
   const [waiting, setWaiting] = useState(0);
+  // Har bir navbat elementining asl tartib raqami: aralashtirish o'chirilsa shu tartib tiklanadi
+  const seq = useRef(0);
+  const numbered = (items) => items.map((i) => ({ ...i, seq: seq.current++ }));
 
   useEffect(() => {
     let alive = true;
@@ -56,7 +62,7 @@ export default function FlashcardSession() {
         const items = order(filter(all, (i) => i.card.id));
         const newInQueue = all.filter((i) => i.card.srs_state === "new").length;
         if (alive) {
-          setQueue(items);
+          setQueue(numbered(items));
           setTotal(items.length);
           setWaiting(Math.max(0, newTotal - newInQueue));
         }
@@ -74,7 +80,7 @@ export default function FlashcardSession() {
       const items = order(
         filter(extra, (i) => i.card.id).filter((i) => i.card.srs_state === "new"),
       );
-      setQueue(items);
+      setQueue(numbered(items));
       setTotal((n) => n + items.length);
       setWaiting(0);
     } catch (e) {
@@ -83,6 +89,26 @@ export default function FlashcardSession() {
   };
 
   const current = queue?.[0];
+
+  // Sozlamalarda aralashtirish bosilsa: sessiya qayta boshlanmaydi, joriy kartadan keyingilar
+  // qayta tartiblanadi (yoqilsa tasodifiy, o'chirilsa asl tartib)
+  const firstShuffle = useRef(true);
+  useEffect(() => {
+    if (firstShuffle.current) {
+      firstShuffle.current = false;
+      return;
+    }
+    setQueue((q) => {
+      if (!q || q.length < 2) return q;
+      const [head, ...rest] = q;
+      return [
+        head,
+        ...(settings.shuffle
+          ? shuffle(rest)
+          : [...rest].sort((a, b) => a.seq - b.seq)),
+      ];
+    });
+  }, [settings.shuffle]);
 
   // Text to speech: ko'rinib turgan tomonni o'qiydi
   useEffect(() => {
@@ -108,14 +134,20 @@ export default function FlashcardSession() {
       }).catch((e) => setError(t("anki.saveError", { msg: e.message })));
       setQueue((q) => {
         const [head, ...rest] = q;
-        return next.due - now < LEARN_AGAIN_WINDOW
-          ? [...rest, { card: head.card, srs: next }]
-          : rest;
+        if (next.due - now >= LEARN_AGAIN_WINDOW) return rest;
+        // Tez qaytadigan karta: aralashtirish yoqilsa navbatning tasodifiy joyiga
+        // (har aylanishda tartib boshqacha bo'ladi), aks holda oxiriga
+        const item = { card: head.card, srs: next, seq: seq.current++ };
+        const from = Math.min(REQUEUE_GAP, rest.length);
+        const at = settings.shuffle
+          ? from + Math.floor(Math.random() * (rest.length - from + 1))
+          : rest.length;
+        return [...rest.slice(0, at), item, ...rest.slice(at)];
       });
       setFlipped(false);
       setDone((d) => d + 1);
     },
-    [current],
+    [current, settings.shuffle],
   );
 
   useEffect(() => {

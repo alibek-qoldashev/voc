@@ -19,6 +19,15 @@ import {
   btnClass,
 } from "../components/ui";
 
+// Pastki hisoblagich: Anki'dagidek New — ko'k, Learning — qizil, Review — yashil
+const COUNTERS = [
+  { state: "new", cls: "text-sky" },
+  { state: "learning", cls: "text-rose" },
+  { state: "review", cls: "text-[#8fe36b]" },
+];
+
+const RATE_KEYS = ["again", "hard", "good", "easy"];
+
 const rateStyle = [
   "border-rose/50 text-rose hover:bg-rose/10",
   "border-amber/50 text-amber hover:bg-amber/10",
@@ -261,6 +270,21 @@ export default function FlashcardSession() {
           </Btn>
         </div>
 
+        <div
+          className="flex justify-center gap-5 text-sm font-semibold"
+          aria-label={t("anki.counts")}
+        >
+          {COUNTERS.map(({ state, cls }) => (
+            <span
+              key={state}
+              className={`${cls} ${current.srs.state === state ? "underline underline-offset-4" : "opacity-80"}`}
+            >
+              {t(`anki.state.${state}`)}{" "}
+              {queue.filter((i) => i.srs.state === state).length}
+            </span>
+          ))}
+        </div>
+
         {!flipped ? (
           <Btn
             className="w-full py-4 text-base"
@@ -278,9 +302,12 @@ export default function FlashcardSession() {
                 onClick={() => grade(r.id)}
                 className={`flex flex-col items-center rounded-2xl border bg-white/5 px-2 py-3 text-sm font-bold transition-colors ${rateStyle[r.id]}`}
               >
-                <span>{r.label}</span>
                 <span className="text-xs font-normal text-mist">
-                  {labels[r.id]} ({t("anki.key", { k: r.key })})
+                  {labels[r.id]}
+                </span>
+                <span>{t(`anki.rate.${RATE_KEYS[r.id]}`)}</span>
+                <span className="text-[0.7rem] font-normal text-mist">
+                  {t("anki.key", { k: r.key })}
                 </span>
               </button>
             ))}

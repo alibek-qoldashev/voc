@@ -84,7 +84,7 @@ const CONTENT = {
         },
         {
           h: "What do Again, Hard, Good and Easy mean?",
-          p: "Anki mode uses the SM-2 algorithm. Each card has an ease factor (EF, 2.5 at the start). The first review after learning is 1 day later, then every next interval is the previous one times EF: 1 → 2.5 → 6.25 → 15.6 days. Good keeps EF, Easy raises it, Hard lowers it, and Again starts the card over.",
+          p: "Anki mode uses SM-2 with learning steps. A new card comes back after 10 minutes, then 1 day, then about 3, 8 days and longer: each Good multiplies the interval by the card's ease (250% at the start). Hard grows it a little, Easy a lot, and Again sends the card back to relearning for 10 minutes. The counters show New (blue), Learning (red) and Review (green) cards.",
         },
         {
           h: "How do starred words work?",
@@ -110,7 +110,7 @@ const CONTENT = {
         },
         {
           h: "Что значат Again, Hard, Good и Easy?",
-          p: "Режим Anki работает по алгоритму SM-2. У каждой карточки есть коэффициент лёгкости (EF, вначале 2.5). Первое повторение — через 1 день, каждый следующий интервал равен предыдущему, умноженному на EF: 1 → 2.5 → 6.25 → 15.6 дня. Good сохраняет EF, Easy повышает, Hard понижает, а Again начинает карточку заново.",
+          p: "Режим Anki работает по SM-2 с шагами изучения. Новая карточка возвращается через 10 минут, затем через 1 день, потом примерно через 3, 8 дней и дольше: каждый Good умножает интервал на лёгкость карточки (вначале 250%). Hard немного удлиняет интервал, Easy — сильно, а Again отправляет карточку на переизучение через 10 минут. Счётчики показывают Новые (синие), Изучаются (красные) и Повторение (зелёные).",
         },
         {
           h: "Как работают избранные слова?",
@@ -136,7 +136,7 @@ const CONTENT = {
         },
         {
           h: "Again, Hard, Good va Easy nimani bildiradi?",
-          p: "Anki rejimi SM-2 algoritmi bilan ishlaydi. Har bir kartaning osonlik koeffitsiyenti bor (EF, boshida 2.5). Birinchi takrorlash 1 kundan keyin, har bir keyingi oraliq esa oldingisini EF ga ko'paytirib topiladi: 1 → 2.5 → 6.25 → 15.6 kun. Good EF ni saqlaydi, Easy oshiradi, Hard kamaytiradi, Again esa kartani boshidan boshlaydi.",
+          p: "Anki rejimi o'rganish qadamlari bilan SM-2 asosida ishlaydi. Yangi karta 10 daqiqadan keyin, so'ng 1 kundan keyin, keyin taxminan 3, 8 kun va undan ko'proq oraliqda qaytadi: har bir Good oraliqni kartaning osonlik koeffitsiyentiga (boshida 250%) ko'paytiradi. Hard oraliqni biroz, Easy esa ancha uzaytiradi, Again kartani 10 daqiqalik qayta o'rganishga tushiradi. Hisoblagichlar Yangi (ko'k), O'rganilmoqda (qizil) va Takror (yashil) kartalarni ko'rsatadi.",
         },
         {
           h: "Yulduzchali so'zlar qanday ishlaydi?",

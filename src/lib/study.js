@@ -4,19 +4,15 @@ import { load } from "./storage";
 
 export const STUDY_SETTINGS_KEY = "study-settings";
 
-// Learn rejimidagi savol turlari, o'tish tartibida (nomi tarjimada: qtype.<id>)
-export const QUESTION_TYPES = [
-  { id: "flip" },
-  { id: "choice" },
-  { id: "match" },
-  { id: "write" },
-];
+// Learn rejimidagi savol turlari, o'tish tartibida (nomi tarjimada: qtype.<id>):
+// avval test, to'g'ri topilgan so'z keyin yozma savol bo'lib qaytadi
+export const QUESTION_TYPES = [{ id: "choice" }, { id: "write" }];
 
 export const STUDY_DEFAULTS = {
   shuffle: true,
   starredOnly: false,
   tts: false,
-  types: { flip: true, choice: true, match: true, write: true },
+  types: { choice: true, write: true },
 };
 
 export function loadStudySettings() {

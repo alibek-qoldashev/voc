@@ -23,7 +23,7 @@ const CONTENT = {
         },
         {
           h: "Learn until it sticks",
-          p: "Learn mode mixes flashcards, multiple choice, matching and writing, and keeps going until you get every word right.",
+          p: "Learn mode works in short rounds: first a multiple choice question, then the words you got right come back as written questions. Missed words return more often until every card is mastered.",
         },
       ],
     },
@@ -41,7 +41,7 @@ const CONTENT = {
         },
         {
           h: "Учите до полного запоминания",
-          p: "Режим Learn сочетает карточки, тест, сопоставление и письмо и продолжается, пока вы не ответите правильно на все слова.",
+          p: "Режим Learn идёт короткими раундами: сначала тест с вариантами, затем угаданные слова возвращаются как письменные вопросы. Ошибки повторяются чаще, пока все карточки не будут усвоены.",
         },
       ],
     },
@@ -59,7 +59,7 @@ const CONTENT = {
         },
         {
           h: "To'liq yodlaguncha",
-          p: "Learn rejimi kartochka, test, juftlash va yozishni aralashtiradi va har bir so'zni to'g'ri topmaguningizcha davom etadi.",
+          p: "Learn rejimi kichik raundlarda ishlaydi: avval variantli test, to'g'ri topilgan so'zlar keyin yozma savol bo'lib qaytadi. Xato qilingan so'zlar tez-tez chiqadi, barcha kartalar o'zlashtirilguncha davom etadi.",
         },
       ],
     },
@@ -80,7 +80,7 @@ const CONTENT = {
         },
         {
           h: "Which study mode should I use?",
-          p: "Learn mixes every format until you know each word. Anki spaces out your reviews over days. Test asks multiple choice questions, Write makes you type the word, and Match is a quick pairing game.",
+          p: "Learn goes from multiple choice to writing, round by round, until every card is mastered. Anki spaces out your reviews over days. Test asks multiple choice questions, Write makes you type the word, and Match is a quick pairing game.",
         },
         {
           h: "What do Again, Hard, Good and Easy mean?",
@@ -106,7 +106,7 @@ const CONTENT = {
         },
         {
           h: "Какой режим выбрать?",
-          p: "Learn сочетает все форматы, пока вы не выучите каждое слово. Anki распределяет повторения по дням. Test — вопросы с вариантами, Write — нужно напечатать слово, Match — быстрая игра на пары.",
+          p: "Learn ведёт от теста к письму, раунд за раундом, пока все карточки не будут усвоены. Anki распределяет повторения по дням. Test — вопросы с вариантами, Write — нужно напечатать слово, Match — быстрая игра на пары.",
         },
         {
           h: "Что значат Again, Hard, Good и Easy?",
@@ -132,7 +132,7 @@ const CONTENT = {
         },
         {
           h: "Qaysi rejimni tanlash kerak?",
-          p: "Learn har bir so'zni bilguningizcha barcha formatlarni aralashtiradi. Anki takrorlashlarni kunlarga taqsimlaydi. Test — variantli savollar, Write — so'zni yozish, Match — tezkor juftlash o'yini.",
+          p: "Learn raundma-raund testdan yozma savolga o'tadi va barcha kartalar o'zlashtirilguncha davom etadi. Anki takrorlashlarni kunlarga taqsimlaydi. Test — variantli savollar, Write — so'zni yozish, Match — tezkor juftlash o'yini.",
         },
         {
           h: "Again, Hard, Good va Easy nimani bildiradi?",

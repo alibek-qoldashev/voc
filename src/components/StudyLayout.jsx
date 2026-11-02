@@ -129,7 +129,7 @@ function SettingsPopover({ mode, settings, update, onAll, onClose }) {
     };
   }, [onClose]);
 
-  const onCount = Object.values(settings.types).filter(Boolean).length;
+  const onCount = QUESTION_TYPES.filter((q) => settings.types[q.id]).length;
   const { t } = useLang();
 
   return (

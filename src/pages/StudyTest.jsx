@@ -10,9 +10,45 @@ const QUESTION_LIMIT = 20;
 // To'g'ri javobdan keyin keyingi savolga avtomatik o'tish; xatoda Continue tugmasi chiqadi
 const NEXT_RIGHT_MS = 800;
 
+// Test boshida: savolda ta'rif (variantlar so'zlar) yoki so'z (variantlar ta'riflar)
+function DirectionPicker({ onPick }) {
+  const { t } = useLang();
+  const options = [
+    { ask: "definition", title: "test.dirDef", hint: "test.dirDefHint" },
+    { ask: "term", title: "test.dirTerm", hint: "test.dirTermHint" },
+  ];
+  return (
+    <div className="mx-auto max-w-xl">
+      <div className="glass rounded-3xl p-8">
+        <h1 className="text-2xl font-extrabold">{t("test.chooseTitle")}</h1>
+        <p className="mt-2 text-mist">{t("test.chooseHint")}</p>
+        <div className="mt-6 grid gap-3">
+          {options.map((o, i) => (
+            <button
+              key={o.ask}
+              type="button"
+              autoFocus={i === 0}
+              onClick={() => onPick(o.ask)}
+              className="rounded-2xl border border-white/15 bg-white/5 p-5 text-left transition-colors hover:border-leaf hover:bg-leaf/10"
+            >
+              <span className="block text-lg font-bold">{t(o.title)}</span>
+              <span className="mt-1 block text-sm text-mist">{t(o.hint)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function StudyTest() {
   const { deckId } = useParams();
-  const { filter, order, say } = useStudy();
+  const { settings, update, testPicked, setTestPicked, filter, order, say } =
+    useStudy();
+  // Savolda ko'rsatiladigan tomon va variantlardagi tomon
+  const askDef = settings.testAsk !== "term";
+  const askText = (c) => (askDef ? definitionOnly(c) : c.term);
+  const optionText = (c) => (askDef ? c.term : definitionOnly(c));
   const { t } = useLang();
   const [cards, setCards] = useState(null);
   const [error, setError] = useState("");
@@ -45,11 +81,11 @@ export default function StudyTest() {
 
   const asked = questions[index]?.card;
   useEffect(() => {
-    if (asked) say(definitionOnly(asked));
+    if (asked && testPicked) say(askText(asked));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [asked?.id, round]);
+  }, [asked?.id, round, testPicked]);
 
-  const pickedRight = picked && picked === asked?.id;
+  const pickedRight = !!picked && picked === asked?.id;
   useEffect(() => {
     if (!pickedRight) return;
     const timer = setTimeout(() => {
@@ -75,6 +111,17 @@ export default function StudyTest() {
           {t("study.backToDeck")}
         </Link>
       </div>
+    );
+  }
+
+  if (!testPicked) {
+    return (
+      <DirectionPicker
+        onPick={(ask) => {
+          setTestPicked(true);
+          if (ask !== settings.testAsk) update({ testAsk: ask });
+        }}
+      />
     );
   }
 
@@ -142,9 +189,11 @@ export default function StudyTest() {
       </div>
 
       <section className="glass mt-6 rounded-3xl p-7">
-        <p className="text-sm text-mist">{t("test.question")}</p>
+        <p className="text-sm text-mist">
+          {t(askDef ? "test.question" : "test.questionTerm")}
+        </p>
         <p className="mt-2 text-2xl font-bold leading-snug">
-          {definitionOnly(q.card)}
+          {askText(q.card)}
         </p>
       </section>
 
@@ -158,7 +207,7 @@ export default function StudyTest() {
                 type="button"
                 disabled={!!picked}
                 onClick={() => choose(o)}
-                className={`w-full rounded-2xl border px-4 py-4 text-left font-bold transition-colors ${
+                className={`w-full rounded-2xl border px-4 py-4 text-left transition-colors ${askDef ? "font-bold" : "font-medium leading-snug"} ${
                   isAnswer
                     ? "border-leaf bg-leaf/15 text-[#8fe36b]"
                     : isWrongPick
@@ -166,7 +215,7 @@ export default function StudyTest() {
                       : "glass hover:border-white/40 disabled:opacity-60"
                 }`}
               >
-                {o.term}
+                {optionText(o)}
               </button>
             </li>
           );
@@ -184,7 +233,7 @@ export default function StudyTest() {
           >
             {picked === q.card.id
               ? t("study.correct")
-              : t("test.correctAnswer", { term: q.card.term })}
+              : t("test.correctAnswer", { term: optionText(q.card) })}
           </p>
           {picked !== q.card.id && (
             <Btn autoFocus onClick={next}>

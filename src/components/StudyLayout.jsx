@@ -4,12 +4,13 @@ import { MODES } from "../lib/modes";
 import {
   QUESTION_TYPES,
   STUDY_SETTINGS_KEY,
+  TEST_SIDES,
   loadStarred,
   loadStudySettings,
 } from "../lib/study";
 import { save } from "../lib/storage";
 import { useLang } from "../lib/i18n";
-import { Icon, Modal, SpeakIcon, Toggle } from "./ui";
+import { Icon, Modal, Select, SpeakIcon, Toggle } from "./ui";
 
 const GEAR = [
   "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
@@ -201,6 +202,41 @@ function SettingsPopover({ mode, settings, update, onAll, onClose }) {
         </div>
       )}
 
+      {mode === "test" && (
+        <div className="mt-4 rounded-2xl bg-white/5 p-5">
+          <p className="text-lg font-bold">{t("study.testFormat")}</p>
+          <div className="mt-4 space-y-3">
+            {[
+              ["study.askSide", settings.testAsk],
+              ["study.answerSide", TEST_SIDES.find((s) => s !== settings.testAsk)],
+            ].map(([label, value], i) => (
+              <label key={label} className="flex items-center justify-between gap-3">
+                <span className="font-semibold text-white/90">{t(label)}</span>
+                <Select
+                  value={value}
+                  aria-label={t(label)}
+                  // Savol va variantlar doim har xil tomon: birini o'zgartirsa ikkinchisi almashadi
+                  onChange={(e) =>
+                    update({
+                      testAsk:
+                        i === 0
+                          ? e.target.value
+                          : TEST_SIDES.find((s) => s !== e.target.value),
+                    })
+                  }
+                >
+                  {TEST_SIDES.map((s) => (
+                    <option key={s} value={s}>
+                      {t(`side.${s}`)}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       <button
         type="button"
         onClick={onAll}
@@ -222,6 +258,7 @@ export default function StudyLayout() {
   const [popover, setPopover] = useState(false);
   const [allOpen, setAllOpen] = useState(false);
   const [runKey, setRunKey] = useState(0);
+  const [testPicked, setTestPicked] = useState(false);
   const { t } = useLang();
 
   const last = pathname.split("/").pop();
@@ -296,7 +333,10 @@ export default function StudyLayout() {
         </div>
       ) : (
         // runKey o'zgarsa sahifa noldan boshlanadi
-        <Outlet key={`${pathname}-${runKey}`} context={{ settings, starred }} />
+        <Outlet
+          key={`${pathname}-${runKey}`}
+          context={{ settings, starred, update, testPicked, setTestPicked }}
+        />
       )}
 
       {allOpen && (

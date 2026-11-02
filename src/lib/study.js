@@ -13,7 +13,11 @@ export const STUDY_DEFAULTS = {
   starredOnly: false,
   tts: false,
   types: { choice: true, write: true },
+  // Test: savolda nima beriladi ("definition" — ta'rif, variantlar so'zlar; "term" — aksincha)
+  testAsk: "definition",
 };
+
+export const TEST_SIDES = ["term", "definition"];
 
 export function loadStudySettings() {
   const saved = load(STUDY_SETTINGS_KEY, {});
@@ -34,6 +38,10 @@ export function useStudy() {
   const starred = ctx?.starred ?? new Set();
   return {
     settings,
+    update: ctx?.update ?? (() => {}),
+    // Test boshida yo'nalish tanlandimi (sozlamadan o'zgartirilganda qayta so'ralmaydi)
+    testPicked: ctx?.testPicked ?? true,
+    setTestPicked: ctx?.setTestPicked ?? (() => {}),
     // Faqat yulduzchali so'zlar yoqilgan bo'lsa, qolganlarini olib tashlaydi
     filter: (items, idOf = (c) => c.id) =>
       settings.starredOnly ? items.filter((i) => starred.has(idOf(i))) : items,

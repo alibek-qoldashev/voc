@@ -13,10 +13,10 @@ const RETRY_GAP = 3;
 // Learn da faqat inglizcha ta'rif ko'rsatiladi (chiziqchadan keyingi tarjimasiz)
 const answerOf = definitionOnly;
 
-// Javobdan keyin keyingi savolga avtomatik o'tish: to'g'ri bo'lsa tezroq,
-// xato (yoki imlo xatosi bilan qabul qilingan) bo'lsa to'g'ri javobni o'qishga vaqt
+// To'g'ri javobdan keyin keyingi savolga avtomatik o'tish. Imlo xatosi bilan
+// qabul qilinganda to'g'ri yozilishini o'qishga ko'proq vaqt. Xatoda Continue tugmasi chiqadi
 const NEXT_RIGHT_MS = 800;
-const NEXT_WRONG_MS = 1500;
+const NEXT_NEAR_MS = 1500;
 
 // Karta holati: 0 — hali o'rganilmagan, oxirgi bosqichdan o'tsa — o'zlashtirilgan
 const statusOf = (level, done) =>
@@ -41,8 +41,11 @@ function Feedback({ correct, card, near, onNext }) {
   const next = useRef(onNext);
   next.current = onNext;
   useEffect(() => {
-    const ms = correct && !near ? NEXT_RIGHT_MS : NEXT_WRONG_MS;
-    const timer = setTimeout(() => next.current(), ms);
+    if (!correct) return;
+    const timer = setTimeout(
+      () => next.current(),
+      near ? NEXT_NEAR_MS : NEXT_RIGHT_MS,
+    );
     return () => clearTimeout(timer);
   }, [correct, near]);
   return (
@@ -65,6 +68,11 @@ function Feedback({ correct, card, near, onNext }) {
           </p>
         )}
       </div>
+      {!correct && (
+        <Btn autoFocus onClick={onNext}>
+          {t("common.continue")}
+        </Btn>
+      )}
     </div>
   );
 }

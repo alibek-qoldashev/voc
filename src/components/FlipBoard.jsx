@@ -14,7 +14,10 @@ import {
   fieldCls,
 } from "./ui";
 
+// Avto-aylantirishda har bir tomon shuncha vaqt to'liq ko'rinib turadi
 const AUTOPLAY_MS = 3000;
+// index.css dagi .flip-inner aylanish animatsiyasi (0.55s) bilan mos
+const FLIP_MS = 550;
 const SETTINGS_KEY = "flipboard-settings";
 const DEFAULTS = { track: false, starredOnly: false, front: "term", tts: false };
 
@@ -299,15 +302,19 @@ export default function FlipBoard({ deckId, cards, onSave }) {
     restart();
   };
 
-  // Avtomatik: avval aylantiradi, keyin keyingi kartaga o'tadi
+  // Avtomatik: avval aylantiradi, keyin keyingi kartaga o'tadi.
+  // Orqa tomonga aylanish animatsiyasi vaqti qo'shiladi, shunda ta'rif ham to'liq 3 soniya turadi
   useEffect(() => {
     if (!playing) return;
-    const t = setTimeout(() => {
-      if (!flipped) return setFlipped(true);
-      if (safeIndex >= total - 1) return setPlaying(false);
-      setFlipped(false);
-      setIndex((i) => i + 1);
-    }, AUTOPLAY_MS);
+    const t = setTimeout(
+      () => {
+        if (!flipped) return setFlipped(true);
+        if (safeIndex >= total - 1) return setPlaying(false);
+        setFlipped(false);
+        setIndex((i) => i + 1);
+      },
+      flipped ? AUTOPLAY_MS + FLIP_MS : AUTOPLAY_MS,
+    );
     return () => clearTimeout(t);
   }, [playing, flipped, safeIndex, total]);
 
@@ -419,7 +426,10 @@ export default function FlipBoard({ deckId, cards, onSave }) {
     const isStarred = starred.has(card.id);
     board = (
       <div className="relative">
+        {/* key: har yangi karta aylanmasdan, so'z tomoni bilan chiqadi —
+            aks holda orqaga aylanayotganda keyingi kartaning javobi ko'rinib qoladi */}
         <div
+          key={card.id}
           className={`flip cursor-pointer ${flipped ? "is-flipped" : ""}`}
           onClick={() => setFlipped((f) => !f)}
         >

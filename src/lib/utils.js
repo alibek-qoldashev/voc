@@ -41,6 +41,14 @@ export function parseImport(text) {
     .filter((c) => c.term && (c.definition || c.translation));
 }
 
+// "word - tarjima" ko'rinishidagi ta'rifdan faqat chiziqchagacha bo'lgan qism (inglizchasi).
+// Bo'sh joy bilan ajratilgan chiziqcha hisoblanadi, "well-known" kabi so'zlar buzilmaydi
+const DEF_SPLIT = /\s+[-–—]\s*|\s*[-–—]\s+/;
+export function definitionOnly(card) {
+  const def = card.definition || card.translation || "";
+  return def.split(DEF_SPLIT)[0].trim() || def;
+}
+
 export function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {

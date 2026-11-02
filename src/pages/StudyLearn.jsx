@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
-import { levenshtein, normalize, shuffle } from "../lib/utils";
+import { definitionOnly, levenshtein, normalize, shuffle } from "../lib/utils";
 import { QUESTION_TYPES, useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { Btn, ErrorBox, Spinner, fieldCls } from "../components/ui";
@@ -10,7 +10,8 @@ const ROUND_SIZE = 7;
 // Xato topilgan karta raund ichida shuncha savoldan keyin yana chiqadi
 const RETRY_GAP = 3;
 
-const answerOf = (c) => c.definition || c.translation;
+// Learn da faqat inglizcha ta'rif ko'rsatiladi (chiziqchadan keyingi tarjimasiz)
+const answerOf = definitionOnly;
 
 // Karta holati: 0 — hali o'rganilmagan, oxirgi bosqichdan o'tsa — o'zlashtirilgan
 const statusOf = (level, done) =>

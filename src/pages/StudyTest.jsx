@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
-import { shuffle } from "../lib/utils";
+import { definitionOnly, shuffle } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { Btn, ErrorBox, Spinner } from "../components/ui";
@@ -43,7 +43,7 @@ export default function StudyTest() {
 
   const asked = questions[index]?.card;
   useEffect(() => {
-    if (asked) say(asked.definition || asked.translation);
+    if (asked) say(definitionOnly(asked));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asked?.id, round]);
 
@@ -132,7 +132,7 @@ export default function StudyTest() {
       <section className="glass mt-6 rounded-3xl p-7">
         <p className="text-sm text-mist">{t("test.question")}</p>
         <p className="mt-2 text-2xl font-bold leading-snug">
-          {q.card.definition || q.card.translation}
+          {definitionOnly(q.card)}
         </p>
       </section>
 

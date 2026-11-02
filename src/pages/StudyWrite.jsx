@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
-import { levenshtein, maskTerm, normalize, speak } from "../lib/utils";
+import {
+  definitionOnly,
+  levenshtein,
+  maskTerm,
+  normalize,
+  speak,
+} from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { Btn, ErrorBox, Spinner, SpeakIcon, fieldCls } from "../components/ui";
@@ -34,7 +40,7 @@ export default function StudyWrite() {
 
   const asked = cards?.find((c) => c.id === queue[0]);
   useEffect(() => {
-    if (asked) say(asked.definition || asked.translation);
+    if (asked) say(definitionOnly(asked));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asked?.id, queue.length]);
 
@@ -123,13 +129,8 @@ export default function StudyWrite() {
       <section className="glass rounded-3xl p-7">
         <p className="text-sm text-mist">{t("write.prompt")}</p>
         <p className="mt-2 text-2xl font-bold leading-snug">
-          {card.definition || card.translation}
+          {definitionOnly(card)}
         </p>
-        {card.definition && card.translation && (
-          <p className="mt-2 font-semibold text-[#8fe36b]">
-            {card.translation}
-          </p>
-        )}
         {card.example && (
           <p className="mt-3 text-base italic text-mist">
             {maskTerm(card.example, card.term)}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
-import { shuffle } from "../lib/utils";
+import { definitionOnly, shuffle } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { Btn, ErrorBox, Spinner, btnClass } from "../components/ui";
@@ -17,7 +17,7 @@ const deal = (cards, order) =>
         {
           key: `${c.id}-d`,
           pair: c.id,
-          text: c.definition || c.translation,
+          text: definitionOnly(c),
           kind: "def",
         },
       ]),

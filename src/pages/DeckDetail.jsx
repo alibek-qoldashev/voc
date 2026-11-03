@@ -9,6 +9,7 @@ import {
   updateCard,
 } from "../lib/api";
 import { parseImport, speak } from "../lib/utils";
+import { getDeckOrigin } from "../lib/storage";
 import CardForm from "../components/CardForm";
 import FlipBoard from "../components/FlipBoard";
 import ItemMenu from "../components/ItemMenu";
@@ -241,6 +242,10 @@ export default function DeckDetail() {
       : cards;
   }, [cards, query]);
 
+  // Papka ichidan kirilgan bo'lsa orqaga papkaga, aks holda Flashcards ro'yxatiga
+  const origin = getDeckOrigin();
+  const backTo = origin ? `/folders/${origin.id}` : "/flashcards";
+
   if (error && !deck) return <ErrorBox>{error}</ErrorBox>;
   if (!deck) return <Spinner />;
 
@@ -364,7 +369,7 @@ export default function DeckDetail() {
       return;
     try {
       await deleteDeck(deckId);
-      navigate("/flashcards");
+      navigate(backTo);
     } catch (e) {
       setError(e.message);
     }
@@ -375,8 +380,8 @@ export default function DeckDetail() {
 
   return (
     <div >
-      <Link to="/flashcards" className="text-sm text-mist hover:text-leaf">
-        ← {t("nav.flashcards")}
+      <Link to={backTo} className="text-sm text-mist hover:text-leaf">
+        ← {origin ? origin.name : t("nav.flashcards")}
       </Link>
 
       <div className="mb-8 mt-2 flex flex-wrap items-start justify-between gap-4">

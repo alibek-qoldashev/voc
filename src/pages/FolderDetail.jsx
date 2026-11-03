@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { setDeckOrigin } from "../lib/storage";
 import {
   deleteDeck,
   getDecksWithStats,
@@ -81,6 +82,7 @@ export default function FolderDetail() {
       .then(([f, all]) => {
         setFolder(f);
         setDecks(all);
+        setDeckOrigin({ id: f.id, name: f.name });
       })
       .catch((e) => setError(e.message));
   }, [folderId]);

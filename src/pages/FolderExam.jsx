@@ -18,7 +18,34 @@ const NEXT_RIGHT_MS = 800;
 // Tanlangan har bir so'z bitta savolga tushadi: juftlash, test yoki true/false
 function buildExam(cards) {
   const count = Math.max(EXAM_MIN_WORDS, Math.round(cards.length * SHARE));
-  const picked = shuffle(cards).slice(0, count);
+  // Bir xil so'z bir nechta deckda bo'lsa ham bir marta olinadi
+  const seen = new Set();
+  const unique = shuffle(cards).filter((c) => {
+    const k = c.term.trim().toLowerCase();
+    return !seen.has(k) && seen.add(k);
+  });
+  const picked = unique.slice(0, count);
+  // Noto'g'ri variantlar imtihonga tushmagan so'zlardan olinadi, shunda so'z boshqa
+  // savolda ham ko'rinib qolmaydi. Papka kichik bo'lsa, yetmaganini tanlanganlardan
+  // Har bir chalg'ituvchi so'z ham faqat bir marta ishlatiladi; tugab qolsa takrorlanadi
+  const rest = unique.slice(count);
+  const used = new Set();
+  const decoys = (card, n, ok = () => true) => {
+    const fits = (c) => c.id !== card.id && ok(c);
+    const out = [];
+    for (const list of [
+      rest.filter((c) => !used.has(c.id)),
+      rest,
+      picked,
+    ]) {
+      for (const c of shuffle(list.filter(fits))) {
+        if (out.length >= n) break;
+        if (!out.includes(c)) out.push(c);
+      }
+    }
+    out.forEach((c) => used.add(c.id));
+    return out;
+  };
   const byType = { match: [], choice: [], tf: [] };
   picked.forEach((c, i) => byType[["match", "choice", "tf"][i % 3]].push(c));
 
@@ -30,15 +57,15 @@ function buildExam(cards) {
     else byType.choice.push(...group);
   }
   byType.choice.forEach((card) => {
-    const others = shuffle(
-      cards.filter((c) => c.id !== card.id && c.term !== card.term),
-    ).slice(0, 3);
+    const others = decoys(card, 3, (c) => c.term !== card.term);
     steps.push({ type: "choice", cards: [card], options: shuffle([card, ...others]) });
   });
   byType.tf.forEach((card) => {
-    const wrong = shuffle(
-      cards.filter((c) => answerOf(c) && answerOf(c) !== answerOf(card)),
-    )[0];
+    const [wrong] = decoys(
+      card,
+      1,
+      (c) => answerOf(c) && answerOf(c) !== answerOf(card),
+    );
     const isTrue = !wrong || Math.random() < 0.5;
     steps.push({
       type: "tf",

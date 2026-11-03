@@ -10,7 +10,11 @@ import {
 import CreateMenu from "../components/CreateMenu";
 import ItemMenu from "../components/ItemMenu";
 import SortMenu, { SORTS, sortDecks } from "../components/SortMenu";
-import { load as loadPref, save as savePref } from "../lib/storage";
+import {
+  load as loadPref,
+  save as savePref,
+  setDeckOrigin,
+} from "../lib/storage";
 import {
   Badge,
   ErrorBox,
@@ -85,6 +89,7 @@ export default function Flashcards() {
 
   useEffect(() => {
     load();
+    setDeckOrigin(null);
   }, []);
 
   if (error && !decks) return <ErrorBox>{error}</ErrorBox>;

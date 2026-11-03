@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getHomeData } from "../lib/api";
+import { setDeckOrigin } from "../lib/storage";
 import { useAuth } from "../context/AuthContext";
 import CreateMenu from "../components/CreateMenu";
 import {
@@ -69,6 +70,7 @@ export default function Home() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    setDeckOrigin(null);
     getHomeData()
       .then(setData)
       .catch((e) => setError(e.message));

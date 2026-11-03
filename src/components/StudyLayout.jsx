@@ -9,6 +9,7 @@ import {
   loadStudySettings,
 } from "../lib/study";
 import { save } from "../lib/storage";
+import { getDeck } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { Icon, Modal, Select, SpeakIcon, Toggle } from "./ui";
 
@@ -259,12 +260,26 @@ export default function StudyLayout() {
   const [allOpen, setAllOpen] = useState(false);
   const [runKey, setRunKey] = useState(0);
   const [testPicked, setTestPicked] = useState(false);
+  const [deckName, setDeckName] = useState("");
   const { t } = useLang();
 
   const last = pathname.split("/").pop();
   const mode = MODES.some((m) => m.id === last) ? last : "standard";
   const back = deckId === "all" ? "/flashcards" : `/flashcards/deck/${deckId}`;
   const noStarred = settings.starredOnly && starred.size === 0;
+
+  // Tepa panel o'rtasida deck nomi
+  useEffect(() => {
+    if (deckId === "all") return;
+    let alive = true;
+    getDeck(deckId)
+      .then((d) => alive && setDeckName(d.name))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [deckId]);
+  const title = deckId === "all" ? t("decks.all") : deckName;
 
   const update = (patch) => {
     const next = { ...settings, ...patch };
@@ -284,6 +299,12 @@ export default function StudyLayout() {
     <div>
       <div className="mb-6 flex items-center justify-between gap-3 border-b border-white/10 pb-4">
         <ModeMenu deckId={deckId} mode={mode} />
+        <p
+          className="min-w-0 flex-1 truncate text-center text-base font-semibold text-mist"
+          title={title}
+        >
+          {title}
+        </p>
         <div className="relative flex items-center gap-1">
           <button
             type="button"

@@ -20,7 +20,7 @@ import StudyLayout from "./components/StudyLayout";
 import StudyLearn from "./pages/StudyLearn";
 import StudyMatch from "./pages/StudyMatch";
 import StudyTest from "./pages/StudyTest";
-import StudyWrite from "./pages/StudyWrite";
+import StudyExam from "./pages/StudyExam";
 
 function MissingConfig() {
   return (
@@ -88,8 +88,8 @@ export default function App() {
               element={<StudyTest />}
             />
             <Route
-              path="/flashcards/study/:deckId/write"
-              element={<StudyWrite />}
+              path="/flashcards/study/:deckId/exam"
+              element={<StudyExam />}
             />
           </Route>
           <Route path="/create-deck" element={<CreateDeck />} />

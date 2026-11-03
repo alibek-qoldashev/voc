@@ -15,7 +15,7 @@ const CONTENT = {
       sections: [
         {
           h: "What you can do",
-          p: "Build decks of words with definitions, flip through them on a big board, and study them in five ways: Learn, Anki, Test, Write and Match.",
+          p: "Build decks of words with definitions, flip through them on a big board, and study them in five ways: Learn, Anki, Test, Exam and Match.",
         },
         {
           h: "How it remembers for you",
@@ -33,7 +33,7 @@ const CONTENT = {
       sections: [
         {
           h: "Что можно делать",
-          p: "Создавайте наборы слов с определениями, листайте их на большой карточке и учите пятью способами: Learn, Anki, Test, Write и Match.",
+          p: "Создавайте наборы слов с определениями, листайте их на большой карточке и учите пятью способами: Learn, Anki, Test, Exam и Match.",
         },
         {
           h: "Как приложение помнит за вас",
@@ -51,7 +51,7 @@ const CONTENT = {
       sections: [
         {
           h: "Nima qilish mumkin",
-          p: "Ta'rifli so'zlardan to'plam tuzing, ularni katta kartada varaqlang va besh usulda yodlang: Learn, Anki, Test, Write va Match.",
+          p: "Ta'rifli so'zlardan to'plam tuzing, ularni katta kartada varaqlang va besh usulda yodlang: Learn, Anki, Test, Exam va Match.",
         },
         {
           h: "Ilova siz uchun qanday eslab qoladi",
@@ -80,7 +80,7 @@ const CONTENT = {
         },
         {
           h: "Which study mode should I use?",
-          p: "Learn goes from multiple choice to writing, round by round, until every card is mastered. Anki spaces out your reviews over days. Test asks multiple choice questions, Write makes you type the word, and Match is a quick pairing game.",
+          p: "Learn goes from multiple choice to writing, round by round, until every card is mastered. Anki spaces out your reviews over days. Test asks multiple choice questions, Exam is a test you set up yourself (number of questions, true/false, multiple choice, matching, written), and Match is a quick pairing game.",
         },
         {
           h: "What do Again, Hard, Good and Easy mean?",
@@ -106,7 +106,7 @@ const CONTENT = {
         },
         {
           h: "Какой режим выбрать?",
-          p: "Learn ведёт от теста к письму, раунд за раундом, пока все карточки не будут усвоены. Anki распределяет повторения по дням. Test — вопросы с вариантами, Write — нужно напечатать слово, Match — быстрая игра на пары.",
+          p: "Learn ведёт от теста к письму, раунд за раундом, пока все карточки не будут усвоены. Anki распределяет повторения по дням. Test — вопросы с вариантами, Exam — экзамен, который вы настраиваете сами (число вопросов, верно/неверно, тест, сопоставление, письмо), Match — быстрая игра на пары.",
         },
         {
           h: "Что значат Again, Hard, Good и Easy?",
@@ -132,7 +132,7 @@ const CONTENT = {
         },
         {
           h: "Qaysi rejimni tanlash kerak?",
-          p: "Learn raundma-raund testdan yozma savolga o'tadi va barcha kartalar o'zlashtirilguncha davom etadi. Anki takrorlashlarni kunlarga taqsimlaydi. Test — variantli savollar, Write — so'zni yozish, Match — tezkor juftlash o'yini.",
+          p: "Learn raundma-raund testdan yozma savolga o'tadi va barcha kartalar o'zlashtirilguncha davom etadi. Anki takrorlashlarni kunlarga taqsimlaydi. Test — variantli savollar, Exam — o'zingiz sozlaydigan imtihon (savollar soni, to'g'ri/noto'g'ri, test, juftlash, yozma), Match — tezkor juftlash o'yini.",
         },
         {
           h: "Again, Hard, Good va Easy nimani bildiradi?",

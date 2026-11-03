@@ -20,10 +20,10 @@ export const MODES = [
     icon: ["M9 11l2 2 4-4", "M5 3h14v18H5z"],
   },
   {
-    id: "write",
-    min: 1,
+    id: "exam",
+    min: 2,
     color: "text-rose",
-    icon: ["M12 20h9", "M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"],
+    icon: ["M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2", "M9 3h6v4H9z", "M9 12h6", "M9 16h4"],
   },
   {
     id: "match",

@@ -29,7 +29,7 @@ const SHORTCUTS = {
     ["1 – 4", "keys.ratings"],
   ],
   test: [["Enter", "keys.nextQuestion"]],
-  write: [["Enter", "keys.checkContinue"]],
+  exam: [["Enter", "keys.checkContinue"]],
   match: [["keys.click", "keys.matchPick"]],
 };
 

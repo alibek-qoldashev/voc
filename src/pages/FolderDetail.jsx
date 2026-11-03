@@ -11,7 +11,8 @@ import ItemMenu from "../components/ItemMenu";
 import SortMenu, { SORTS, sortDecks } from "../components/SortMenu";
 import { load as loadPref, save as savePref } from "../lib/storage";
 import FolderPicker from "../components/FolderPicker";
-import { EXAM_MIN_WORDS } from "./FolderExam";
+import { EXAM_MIN_WORDS, folderExamDefaults } from "./FolderExam";
+import { EXAM_MAX, ExamSetup } from "../components/Exam";
 import { Badge, Btn, ErrorBox, Spinner, btnClass } from "../components/ui";
 import { useLang } from "../lib/i18n";
 
@@ -64,7 +65,8 @@ export default function FolderDetail() {
   const [error, setError] = useState("");
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState("");
-  const [moving, setMoving] = useState(null); // "Add to folder" oynasidagi deck
+  const [moving, setMoving] = useState(null);
+  const [examOpen, setExamOpen] = useState(false); // "Add to folder" oynasidagi deck
   // Flashcards sahifasi bilan bir xil saralash tanlovi
   const [sortBy, setSortBy] = useState(() => {
     const saved = loadPref("deck-sort", "name");
@@ -166,12 +168,9 @@ export default function FolderDetail() {
         {inside.length > 0 && (
           <div className="flex items-center gap-2">
             {totalWords >= EXAM_MIN_WORDS ? (
-              <Link
-                to={`/folders/${folderId}/exam`}
-                className={btnClass("primary", "h-[46px]")}
-              >
+              <Btn className="h-[46px]" onClick={() => setExamOpen(true)}>
                 {t("exam.studyAll")}
-              </Link>
+              </Btn>
             ) : (
               <span
                 title={t("exam.needs", { count: EXAM_MIN_WORDS })}
@@ -310,6 +309,18 @@ export default function FolderDetail() {
             </>
           )}
         </section>
+      )}
+
+      {/* Study all: imtihonni oynada sozlab, keyin boshlaymiz */}
+      {examOpen && (
+        <ExamSetup
+          max={Math.min(EXAM_MAX, totalWords)}
+          initial={folderExamDefaults(totalWords)}
+          onStart={(config) =>
+            navigate(`/folders/${folderId}/exam`, { state: { config } })
+          }
+          onClose={() => setExamOpen(false)}
+        />
       )}
 
       {moving && (

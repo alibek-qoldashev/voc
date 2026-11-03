@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getFolder, getFolderCards, logPractice } from "../lib/api";
-import { shuffle } from "../lib/utils";
+import { definitionOnly, shuffle } from "../lib/utils";
 import { useLang } from "../lib/i18n";
 import { Btn, ErrorBox, Spinner } from "../components/ui";
 
@@ -10,7 +10,10 @@ const SHARE = 0.3;
 const MATCH_GROUP = 4;
 export const EXAM_MIN_WORDS = 4;
 
-const answerOf = (c) => c.definition || c.translation;
+// Faqat inglizcha ta'rif ko'rsatiladi (chiziqchadan keyingi qism olinmaydi)
+const answerOf = definitionOnly;
+// To'g'ri javobdan keyin keyingi savolga avtomatik o'tish; xatoda Next tugmasi chiqadi
+const NEXT_RIGHT_MS = 800;
 
 // Tanlangan har bir so'z bitta savolga tushadi: juftlash, test yoki true/false
 function buildExam(cards) {
@@ -49,6 +52,13 @@ function buildExam(cards) {
 
 function Verdict({ correct, children, onNext, last }) {
   const { t } = useLang();
+  const next = useRef(onNext);
+  next.current = onNext;
+  useEffect(() => {
+    if (!correct) return;
+    const timer = setTimeout(() => next.current(), NEXT_RIGHT_MS);
+    return () => clearTimeout(timer);
+  }, [correct]);
   return (
     <div
       role="status"
@@ -62,9 +72,11 @@ function Verdict({ correct, children, onNext, last }) {
         </p>
         {!correct && children}
       </div>
-      <Btn autoFocus onClick={onNext}>
-        {last ? t("test.seeScore") : t("test.next")}
-      </Btn>
+      {!correct && (
+        <Btn autoFocus onClick={onNext}>
+          {last ? t("test.seeScore") : t("test.next")}
+        </Btn>
+      )}
     </div>
   );
 }

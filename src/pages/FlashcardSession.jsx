@@ -279,7 +279,7 @@ export default function FlashcardSession() {
         className={`flip mt-6 cursor-pointer ${flipped ? "is-flipped" : ""}`}
         onClick={() => setFlipped((f) => !f)}
       >
-        <div className="flip-inner relative h-[22rem] sm:h-[26rem]">
+        <div className="flip-inner relative h-[clamp(13rem,calc(100dvh-30rem),26rem)]">
           <div className="face glass absolute inset-0 flex flex-col items-center justify-center rounded-3xl px-8 text-center">
             {reverse ? defFace : termFace}
             {!reverse && hint}

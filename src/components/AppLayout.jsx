@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 import Footer from "./Footer";
@@ -99,6 +99,12 @@ const STORAGE_KEY = "mindpro:sidebar-open";
 export default function AppLayout() {
   const { user } = useAuth();
   const { t } = useLang();
+  // O'quv rejimlari va papka imtihoni: footer yashiriladi, sahifa ekranga sig'adi va
+  // o'zi aylanmaydi (kerak bo'lsa faqat o'rta qism ichida aylanadi)
+  const { pathname } = useLocation();
+  const studying =
+    pathname.startsWith("/flashcards/study/") ||
+    /^\/folders\/[^/]+\/exam/.test(pathname);
 
   // Desktop: keng yoki ingichka. Tanlov brauzerda saqlanadi.
   const [open, setOpen] = useState(() => {
@@ -177,7 +183,11 @@ export default function AppLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-night text-white md:flex md:gap-4 md:p-4 lg:gap-6 lg:p-6">
+    <div
+      className={`min-h-screen bg-night text-white md:flex md:gap-4 md:p-4 lg:gap-6 lg:p-6 ${
+        studying ? "md:h-screen md:overflow-hidden" : ""
+      }`}
+    >
       {/* Desktop sidebar */}
       <aside
         className={`hidden shrink-0 flex-col gap-4 transition-[width] duration-200 md:sticky md:top-6 md:flex md:h-[calc(100vh-3rem)] ${
@@ -248,9 +258,13 @@ export default function AppLayout() {
         </ul>
       </nav>
 
-      <main className="min-w-0 flex-1 px-4 pb-28 pt-6 md:pb-20 sm:px-6 md:px-2 md:pt-2">
+      <main
+        className={`min-w-0 flex-1 px-4 pb-28 pt-6 sm:px-6 md:px-2 md:pt-2 ${
+          studying ? "md:overflow-y-auto md:pb-2" : "md:pb-20"
+        }`}
+      >
         <Outlet />
-        <Footer className="mt-16" />
+        {!studying && <Footer className="mt-16" />}
       </main>
     </div>
   );

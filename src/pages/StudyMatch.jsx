@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
 import { definitionOnly, withMeaning, shuffle } from "../lib/utils";
-import MeaningPicker from "../components/MeaningPicker";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack } from "../lib/decks";
@@ -28,8 +27,8 @@ const deal = (cards, order) =>
 
 export default function StudyMatch() {
   const { deckId } = useParams();
-  const { settings, meaningPicked, pickMeaning, filter, order, say } = useStudy();
-  const uz = settings.meaning === "uzbek";
+  const { meaning, filter, order, say } = useStudy();
+  const uz = meaning === "uzbek";
   const { t } = useLang();
   const [cards, setCards] = useState(null);
   const [tiles, setTiles] = useState([]);
@@ -46,7 +45,7 @@ export default function StudyMatch() {
   useEffect(() => {
     getCards(deckId)
       .then((cs) => {
-        const usable = withMeaning(filter(cs), settings.meaning).filter(
+        const usable = withMeaning(filter(cs), meaning).filter(
           (c) => c.definition || c.translation,
         );
         setCards(usable);
@@ -66,14 +65,6 @@ export default function StudyMatch() {
   }, [startedAt, finished]);
 
   if (error) return <ErrorBox>{error}</ErrorBox>;
-  if (!meaningPicked("match")) {
-    return (
-      <MeaningPicker
-        value={settings.meaning}
-        onPick={(m) => pickMeaning("match", m)}
-      />
-    );
-  }
   if (!cards) return <Spinner label={t("match.dealing")} />;
   if (cards.length < 3) {
     return (

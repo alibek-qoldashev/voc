@@ -12,7 +12,6 @@ import { save } from "../lib/storage";
 import { getDeck } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { deckIdsOf, studyBack } from "../lib/decks";
-import { MEANINGS } from "../lib/utils";
 import { Icon, Modal, Select, SpeakIcon, Toggle } from "./ui";
 
 const GEAR = [
@@ -32,6 +31,7 @@ const SHORTCUTS = {
   ],
   test: [["Enter", "keys.nextQuestion"]],
   exam: [["Enter", "keys.checkContinue"]],
+  uzbek: [],
   match: [["keys.click", "keys.matchPick"]],
 };
 
@@ -205,23 +205,6 @@ function SettingsPopover({ mode, settings, update, onAll, onClose }) {
         </div>
       )}
 
-      {(mode === "test" || mode === "match") && (
-        <label className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white/5 p-5">
-          <span className="text-lg font-bold">{t("meaning.label")}</span>
-          <Select
-            value={settings.meaning}
-            aria-label={t("meaning.label")}
-            onChange={(e) => update({ meaning: e.target.value })}
-          >
-            {MEANINGS.map((m) => (
-              <option key={m} value={m}>
-                {t(`meaning.${m}`)}
-              </option>
-            ))}
-          </Select>
-        </label>
-      )}
-
       {mode === "test" && (
         <div className="mt-4 rounded-2xl bg-white/5 p-5">
           <p className="text-lg font-bold">{t("study.testFormat")}</p>
@@ -271,7 +254,8 @@ function SettingsPopover({ mode, settings, update, onAll, onClose }) {
 // Learn, Anki, Test, Write va Match sahifalarining umumiy tepa paneli
 export default function StudyLayout() {
   const { deckId } = useParams();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const meaning = new URLSearchParams(search).get("m") === "uz" ? "uzbek" : "definition";
   const navigate = useNavigate();
   const [settings, setSettings] = useState(loadStudySettings);
   const [starred] = useState(() => loadStarred(deckId));
@@ -279,11 +263,7 @@ export default function StudyLayout() {
   const [allOpen, setAllOpen] = useState(false);
   const [runKey, setRunKey] = useState(0);
   const [testPicked, setTestPicked] = useState(false);
-  const [meaningPicked, setMeaningPicked] = useState(() => new Set());
-  const pickMeaning = (m, meaning) => {
-    setMeaningPicked((s) => new Set(s).add(m));
-    update({ meaning });
-  };
+
   const [deckName, setDeckName] = useState("");
   const { t } = useLang();
 
@@ -304,7 +284,9 @@ export default function StudyLayout() {
       alive = false;
     };
   }, [deckId]);
-  const title = deckId === "all" ? t("decks.all") : deckName;
+  const name = deckId === "all" ? t("decks.all") : deckName;
+  // Tarjima rejimidan kirilganda nom yonida belgi
+  const title = meaning === "uzbek" && name ? `${name} · ${t("mode.uzbek")}` : name;
 
   const update = (patch) => {
     const next = { ...settings, ...patch };
@@ -387,8 +369,7 @@ export default function StudyLayout() {
             update,
             testPicked,
             setTestPicked,
-            meaningPicked,
-            pickMeaning,
+            meaning,
           }}
         />
       )}

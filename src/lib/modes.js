@@ -1,4 +1,6 @@
 // O'quv rejimlari: deck sahifasidagi tugmalar va o'quv sahifalari tepasidagi menyu.
+// Tarjima rejimi ichida shu rejimlar o'zbekcha tarjima bilan ishlaydi (?m=uz)
+export const UZBEK_MODES = ["standard", "test", "exam", "match"];
 // Nomi va tavsifi tarjimada: mode.<id> va mode.<id>.text
 export const MODES = [
   {
@@ -30,5 +32,12 @@ export const MODES = [
     min: 3,
     color: "text-[#c792ea]",
     icon: ["M4 4h7v7H4z", "M13 13h7v7h-7z", "M13 7.5h7", "M4 16.5h7"],
+  },
+  // Tarjima: so'zni o'zbekcha tarjimasi bilan Anki, Test, Exam yoki Match orqali o'qish
+  {
+    id: "uzbek",
+    min: 1,
+    color: "text-[#4fd1c5]",
+    icon: ["M5 8h8", "M9 5v3", "M7 8c0 4 3 7 6 8", "M11 8c0 3-3 6-6 7", "m13 20 4-9 4 9", "M14.5 17h5"],
   },
 ];

@@ -20,7 +20,7 @@ const DEFAULT_COUNT = 20;
 export default function StudyExam() {
   const { deckId } = useParams();
   const navigate = useNavigate();
-  const { filter } = useStudy();
+  const { filter, meaning } = useStudy();
   const { t } = useLang();
   const [cards, setCards] = useState(null);
   const [error, setError] = useState("");
@@ -30,7 +30,8 @@ export default function StudyExam() {
 
   useEffect(() => {
     getCards(deckId)
-      .then((cs) => setCards(filter(cs).filter(definitionOnly)))
+      // Tarjima rejimida ta'rif o'rniga o'zbekcha tarjima (tarjimasi yo'q kartalar tushib qoladi)
+      .then((cs) => setCards(withMeaning(filter(cs), meaning).filter(definitionOnly)))
       .catch((e) => setError(e.message));
   }, [deckId]);
 
@@ -43,6 +44,9 @@ export default function StudyExam() {
     return (
       <div className="glass mx-auto max-w-xl rounded-3xl p-8 text-center">
         <p className="text-xl font-bold">{t("study.notEnough")}</p>
+        {meaning === "uzbek" && (
+          <p className="mt-1 text-mist">{t("meaning.needsUz", { count: 2 })}</p>
+        )}
         <Link to={back} className="mt-5 inline-block text-leaf underline">
           {t(backLabel)}
         </Link>
@@ -67,7 +71,7 @@ export default function StudyExam() {
       {setupOpen && (
         <ExamSetup
           max={max}
-          maxFor={(m) => Math.min(EXAM_MAX, withMeaning(cards, m).length)}
+          meaning={meaning}
           initial={config ?? loadExamSetup(Math.min(DEFAULT_COUNT, max), max)}
           onStart={(c) => {
             setConfig(c);

@@ -21,6 +21,7 @@ import StudyLearn from "./pages/StudyLearn";
 import StudyMatch from "./pages/StudyMatch";
 import StudyTest from "./pages/StudyTest";
 import StudyExam from "./pages/StudyExam";
+import StudyUzbek from "./pages/StudyUzbek";
 
 function MissingConfig() {
   return (
@@ -90,6 +91,10 @@ export default function App() {
             <Route
               path="/flashcards/study/:deckId/exam"
               element={<StudyExam />}
+            />
+            <Route
+              path="/flashcards/study/:deckId/uzbek"
+              element={<StudyUzbek />}
             />
           </Route>
           <Route path="/create-deck" element={<CreateDeck />} />

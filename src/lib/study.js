@@ -15,8 +15,6 @@ export const STUDY_DEFAULTS = {
   types: { choice: true, write: true },
   // Test: savolda nima beriladi ("definition" — ta'rif, variantlar so'zlar; "term" — aksincha)
   testAsk: "definition",
-  // Test va Match: so'z nima bilan juftlanadi — ta'rif yoki o'zbekcha tarjima
-  meaning: "definition",
 };
 
 export const TEST_SIDES = ["term", "definition"];
@@ -44,9 +42,8 @@ export function useStudy() {
     // Test boshida yo'nalish tanlandimi (sozlamadan o'zgartirilganda qayta so'ralmaydi)
     testPicked: ctx?.testPicked ?? true,
     setTestPicked: ctx?.setTestPicked ?? (() => {}),
-    // Shu rejimga kirganda "Term – Definition / Term – Uzbek" tanlandimi
-    meaningPicked: (mode) => ctx?.meaningPicked?.has(mode) ?? true,
-    pickMeaning: (mode, meaning) => ctx?.pickMeaning?.(mode, meaning),
+    // "Tarjima" rejimi orqali kirilgan bo'lsa (?m=uz) so'z o'zbekcha tarjimasi bilan so'raladi
+    meaning: ctx?.meaning ?? "definition",
     // Faqat yulduzchali so'zlar yoqilgan bo'lsa, qolganlarini olib tashlaydi
     filter: (items, idOf = (c) => c.id) =>
       settings.starredOnly ? items.filter((i) => starred.has(idOf(i))) : items,

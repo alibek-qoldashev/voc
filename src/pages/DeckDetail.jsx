@@ -38,7 +38,7 @@ function stateBadge(c, t) {
 function ModeTiles({ deckId, count, ready }) {
   const { t } = useLang();
   return (
-    <ul className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <ul className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-6">
       {MODES.map((m) => {
         const enough = count >= m.min;
         const inner = (

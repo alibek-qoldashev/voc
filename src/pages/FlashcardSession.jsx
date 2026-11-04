@@ -7,7 +7,7 @@ import {
   previewLabels,
   schedule,
 } from "../lib/srs";
-import { maskTerm, shuffle, speak } from "../lib/utils";
+import { maskTerm, shuffle, speak, withMeaning } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack } from "../lib/decks";
@@ -42,7 +42,16 @@ const rateStyle = [
 export default function FlashcardSession() {
   const { deckId } = useParams();
   const navigate = useNavigate();
-  const { settings, filter, order, say } = useStudy();
+  const { settings, meaning, filter, order, say } = useStudy();
+  const uz = meaning === "uzbek";
+  // Tarjima rejimida orqa tomonda o'zbekcha tarjima; tarjimasi yo'q kartalar chiqmaydi.
+  // Takrorlash jadvali oddiy Anki bilan bir xil (karta bitta)
+  const meant = (items) =>
+    uz
+      ? items
+          .map((i) => ({ ...i, card: withMeaning([i.card], "uzbek")[0] }))
+          .filter((i) => i.card)
+      : items;
   const { t } = useLang();
   const [queue, setQueue] = useState(null);
   const [flipped, setFlipped] = useState(false);
@@ -60,7 +69,7 @@ export default function FlashcardSession() {
     let alive = true;
     Promise.all([getStudyQueue(deckId), countNewCards(deckId)])
       .then(([all, newTotal]) => {
-        const items = order(filter(all, (i) => i.card.id));
+        const items = order(meant(filter(all, (i) => i.card.id)));
         const newInQueue = all.filter((i) => i.card.srs_state === "new").length;
         if (alive) {
           setQueue(numbered(items));
@@ -79,7 +88,7 @@ export default function FlashcardSession() {
     try {
       const extra = await getStudyQueue(deckId, { extraNew: waiting });
       const items = order(
-        filter(extra, (i) => i.card.id).filter((i) => i.card.srs_state === "new"),
+        meant(filter(extra, (i) => i.card.id)).filter((i) => i.card.srs_state === "new"),
       );
       setQueue(numbered(items));
       setTotal((n) => n + items.length);
@@ -116,7 +125,9 @@ export default function FlashcardSession() {
     if (!current) return;
     const c = current.card;
     const def = c.definition || c.translation;
-    say(flipped !== reverse ? def : c.term);
+    const showsDef = flipped !== reverse;
+    // O'zbekcha matnni inglizcha ovoz o'qimaydi
+    if (!(uz && showsDef)) say(showsDef ? def : c.term);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.card.id, flipped, reverse, done]);
   const back = studyBack(deckId).to;

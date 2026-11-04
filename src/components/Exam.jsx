@@ -2,14 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { logPractice } from "../lib/api";
 import {
-  MEANINGS,
   definitionOnly,
   levenshtein,
   normalize,
   shuffle,
   withMeaning,
 } from "../lib/utils";
-import MeaningPicker from "./MeaningPicker";
 import { load, save } from "../lib/storage";
 import { useLang } from "../lib/i18n";
 import { Btn, Modal, Select, Toggle, fieldCls } from "./ui";
@@ -35,7 +33,6 @@ export function loadExamSetup(defaultCount, max) {
   return {
     count: Math.min(max, Math.max(1, defaultCount)),
     answerWith: ANSWER_WITH.includes(saved.answerWith) ? saved.answerWith : "term",
-    meaning: MEANINGS.includes(saved.meaning) ? saved.meaning : "definition",
     types,
   };
 }
@@ -126,16 +123,13 @@ export function buildExam(cards, { count, answerWith, types, meaning }) {
 const askOf = (card, d) => (d === "term" ? answerOf(card) : card.term);
 const replyOf = (card, d) => (d === "term" ? card.term : answerOf(card));
 
-// Imtihon sozlamalari oynasi: avval "Term – Definition" yoki "Term – Uzbek", keyin sozlamalar.
-// maxFor(meaning) — shu tanlovda nechta so'z bor (o'zbekchasi yo'q kartalar tushib qoladi)
-export function ExamSetup({ max, maxFor = () => max, initial, onStart, onClose }) {
+// Imtihon sozlamalari oynasi. meaning — "uzbek" bo'lsa (Tarjima rejimi) javob o'zbekcha tarjima
+export function ExamSetup({ max, meaning = "definition", initial, onStart, onClose }) {
   const { t } = useLang();
-  const [meaning, setMeaning] = useState(initial.meaning || "definition");
-  const [step, setStep] = useState("meaning");
   const [count, setCount] = useState(String(initial.count));
   const [answerWith, setAnswerWith] = useState(initial.answerWith);
   const [types, setTypes] = useState(initial.types);
-  const limit = Math.max(0, maxFor(meaning));
+  const limit = Math.max(0, max);
   const n = Math.min(limit, Math.max(1, parseInt(count, 10) || 0));
   const anyType = EXAM_TYPES.some((x) => types[x]);
   const enough = limit >= 2;
@@ -143,36 +137,12 @@ export function ExamSetup({ max, maxFor = () => max, initial, onStart, onClose }
   const start = (e) => {
     e.preventDefault();
     if (!anyType || !enough) return;
-    save(SETUP_KEY, { answerWith, types, meaning });
+    save(SETUP_KEY, { answerWith, types });
     onStart({ count: n, answerWith, types, meaning });
   };
 
-  if (step === "meaning") {
-    return (
-      <Modal title={t("exam.setupTitle")} onClose={onClose}>
-        <MeaningPicker
-          card={false}
-          value={meaning}
-          onPick={(m) => {
-            setMeaning(m);
-            const l = maxFor(m);
-            setCount((c) => String(Math.min(l, Math.max(1, parseInt(c, 10) || 1))));
-            setStep("setup");
-          }}
-        />
-      </Modal>
-    );
-  }
-
   return (
     <Modal title={t("exam.setupTitle")} onClose={onClose}>
-      <button
-        type="button"
-        onClick={() => setStep("meaning")}
-        className="-mt-3 mb-5 text-sm text-mist hover:text-white"
-      >
-        ← {t(`meaning.pair.${meaning}`)}
-      </button>
       {!enough && (
         <p className="mb-4 rounded-2xl bg-rose/10 p-4 text-sm text-rose">
           {t("meaning.needsUz", { count: 2 })}

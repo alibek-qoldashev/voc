@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
 import { definitionOnly, shuffle, withMeaning } from "../lib/utils";
-import MeaningPicker from "../components/MeaningPicker";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack } from "../lib/decks";
@@ -52,13 +51,12 @@ export default function StudyTest() {
     update,
     testPicked,
     setTestPicked,
-    meaningPicked,
-    pickMeaning,
+    meaning,
     filter,
     order,
     say,
   } = useStudy();
-  const uz = settings.meaning === "uzbek";
+  const uz = meaning === "uzbek";
   // Savolda ko'rsatiladigan tomon va variantlardagi tomon
   const askDef = settings.testAsk !== "term";
   const askText = (c) => (askDef ? definitionOnly(c) : c.term);
@@ -75,7 +73,7 @@ export default function StudyTest() {
     getCards(deckId)
       .then((cs) =>
         setCards(
-          withMeaning(filter(cs), settings.meaning).filter(
+          withMeaning(filter(cs), meaning).filter(
             (c) => c.definition || c.translation,
           ),
         ),
@@ -115,14 +113,6 @@ export default function StudyTest() {
   }, [pickedRight, index]);
 
   if (error) return <ErrorBox>{error}</ErrorBox>;
-  if (!meaningPicked("test")) {
-    return (
-      <MeaningPicker
-        value={settings.meaning}
-        onPick={(m) => pickMeaning("test", m)}
-      />
-    );
-  }
   if (!cards) return <Spinner label={t("test.building")} />;
   if (cards.length < 4) {
     return (

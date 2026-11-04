@@ -11,6 +11,7 @@ import {
 import { save } from "../lib/storage";
 import { getDeck } from "../lib/api";
 import { useLang } from "../lib/i18n";
+import { deckIdsOf, studyBack } from "../lib/decks";
 import { Icon, Modal, Select, SpeakIcon, Toggle } from "./ui";
 
 const GEAR = [
@@ -265,15 +266,16 @@ export default function StudyLayout() {
 
   const last = pathname.split("/").pop();
   const mode = MODES.some((m) => m.id === last) ? last : "standard";
-  const back = deckId === "all" ? "/flashcards" : `/flashcards/deck/${deckId}`;
+  const back = studyBack(deckId).to;
   const noStarred = settings.starredOnly && starred.size === 0;
 
   // Tepa panel o'rtasida deck nomi
   useEffect(() => {
     if (deckId === "all") return;
     let alive = true;
-    getDeck(deckId)
-      .then((d) => alive && setDeckName(d.name))
+    // To'plamda bir nechta deck: nomlari vergul bilan
+    Promise.all(deckIdsOf(deckId).map(getDeck))
+      .then((ds) => alive && setDeckName(ds.map((d) => d.name).join(", ")))
       .catch(() => {});
     return () => {
       alive = false;

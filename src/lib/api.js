@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { dayKey, WEEKDAYS } from "./utils";
 import { LEARN_AGAIN_WINDOW } from "./srs";
+import { whereDeck } from "./decks";
 
 const must = ({ data, error }) => {
   if (error) throw error;
@@ -83,11 +84,10 @@ export const updateDeck = (id, fields) =>
     .then(must);
 
 // ---- Kartalar ----------------------------------------------------------
+// deckId: bitta deck yoki vergul bilan bir nechta (lib/decks.js)
 export const getCards = (deckId) =>
-  supabase
-    .from("cards")
-    .select("*")
-    .eq("deck_id", deckId)
+  whereDeck(supabase.from("cards").select("*"), deckId)
+    .order("deck_id", { ascending: true })
     .order("position", { ascending: true })
     .order("created_at", { ascending: true })
     .then(must);
@@ -168,10 +168,8 @@ export async function getStudyQueue(deckId, { extraNew = 0 } = {}) {
     .order("position", { ascending: true })
     .order("created_at", { ascending: true })
     .limit(left);
-  if (deckId !== "all") {
-    dueQ = dueQ.eq("deck_id", deckId);
-    newQ = newQ.eq("deck_id", deckId);
-  }
+  dueQ = whereDeck(dueQ, deckId);
+  newQ = whereDeck(newQ, deckId);
   const [due, fresh] = await Promise.all([
     dueQ.then(must),
     left > 0 ? newQ.then(must) : Promise.resolve([]),
@@ -185,7 +183,7 @@ export async function countNewCards(deckId) {
     .from("cards")
     .select("id", { count: "exact", head: true })
     .eq("srs_state", "new");
-  if (deckId !== "all") q = q.eq("deck_id", deckId);
+  q = whereDeck(q, deckId);
   const { count, error } = await q;
   if (error) throw error;
   return count ?? 0;

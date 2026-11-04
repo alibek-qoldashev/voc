@@ -4,6 +4,7 @@ import { getCards } from "../lib/api";
 import { definitionOnly } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
+import { studyBack } from "../lib/decks";
 import { ErrorBox, Spinner } from "../components/ui";
 import {
   EXAM_MAX,
@@ -36,14 +37,14 @@ export default function StudyExam() {
   if (error) return <ErrorBox>{error}</ErrorBox>;
   if (!cards) return <Spinner label={t("exam.preparing")} />;
 
-  const back = `/flashcards/deck/${deckId}`;
+  const { to: back, label: backLabel } = studyBack(deckId);
 
   if (cards.length < 2) {
     return (
       <div className="glass mx-auto max-w-xl rounded-3xl p-8 text-center">
         <p className="text-xl font-bold">{t("study.notEnough")}</p>
         <Link to={back} className="mt-5 inline-block text-leaf underline">
-          {t("study.backToDeck")}
+          {t(backLabel)}
         </Link>
       </div>
     );
@@ -59,7 +60,7 @@ export default function StudyExam() {
           cards={cards}
           config={config}
           back={back}
-          backLabel={t("study.backToDeck")}
+          backLabel={t(backLabel)}
           onSettings={() => setSetupOpen(true)}
         />
       )}

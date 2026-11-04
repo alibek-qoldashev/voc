@@ -10,6 +10,7 @@ import {
 import { maskTerm, shuffle, speak } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
+import { studyBack } from "../lib/decks";
 import {
   Btn,
   CardImage,
@@ -118,7 +119,7 @@ export default function FlashcardSession() {
     say(flipped !== reverse ? def : c.term);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.card.id, flipped, reverse, done]);
-  const back = deckId === "all" ? "/flashcards" : `/flashcards/deck/${deckId}`;
+  const back = studyBack(deckId).to;
 
   const grade = useCallback(
     (rating) => {

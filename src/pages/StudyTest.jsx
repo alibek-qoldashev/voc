@@ -4,6 +4,7 @@ import { getCards, logPractice } from "../lib/api";
 import { definitionOnly, shuffle } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
+import { studyBack } from "../lib/decks";
 import { Btn, ErrorBox, Spinner } from "../components/ui";
 
 const QUESTION_LIMIT = 20;
@@ -105,10 +106,10 @@ export default function StudyTest() {
           {t("test.needs")}
         </p>
         <Link
-          to={`/flashcards/deck/${deckId}`}
+          to={studyBack(deckId).to}
           className="mt-5 inline-block text-leaf underline"
         >
-          {t("study.backToDeck")}
+          {t(studyBack(deckId).label)}
         </Link>
       </div>
     );
@@ -149,10 +150,10 @@ export default function StudyTest() {
               {t("study.tryAgain")}
             </Btn>
             <Link
-              to={`/flashcards/deck/${deckId}`}
+              to={studyBack(deckId).to}
               className="self-center text-sm text-mist underline"
             >
-              {t("study.backToDeck")}
+              {t(studyBack(deckId).label)}
             </Link>
           </div>
         </div>
@@ -165,7 +166,7 @@ export default function StudyTest() {
     const right = opt.id === q.card.id;
     setPicked(opt.id);
     if (right) setScore((s) => s + 1);
-    logPractice(deckId, q.card.id, right).catch(() => {});
+    logPractice(q.card.deck_id, q.card.id, right).catch(() => {});
   };
 
   const next = () => {

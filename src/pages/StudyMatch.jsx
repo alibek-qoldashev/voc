@@ -4,6 +4,7 @@ import { getCards, logPractice } from "../lib/api";
 import { definitionOnly, shuffle } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
+import { studyBack } from "../lib/decks";
 import { Btn, ErrorBox, Spinner, btnClass } from "../components/ui";
 
 const PAIRS = 6;
@@ -13,10 +14,11 @@ const deal = (cards, order) =>
     order(cards)
       .slice(0, PAIRS)
       .flatMap((c) => [
-        { key: `${c.id}-t`, pair: c.id, text: c.term, kind: "term" },
+        { key: `${c.id}-t`, pair: c.id, deck: c.deck_id, text: c.term, kind: "term" },
         {
           key: `${c.id}-d`,
           pair: c.id,
+          deck: c.deck_id,
           text: definitionOnly(c),
           kind: "def",
         },
@@ -69,10 +71,10 @@ export default function StudyMatch() {
           {t("match.needs")}
         </p>
         <Link
-          to={`/flashcards/deck/${deckId}`}
+          to={studyBack(deckId).to}
           className="mt-5 inline-block text-leaf underline"
         >
-          {t("study.backToDeck")}
+          {t(studyBack(deckId).label)}
         </Link>
       </div>
     );
@@ -109,7 +111,7 @@ export default function StudyMatch() {
       const next = new Set(matched).add(tile.pair);
       setMatched(next);
       setSelected(null);
-      logPractice(deckId, tile.pair, true).catch(() => {});
+      logPractice(tile.deck, tile.pair, true).catch(() => {});
       if (next.size === pairCount) {
         setElapsed(Date.now() - startedAt);
         setFinished(true);
@@ -118,7 +120,7 @@ export default function StudyMatch() {
       setWrong([first.key, tile.key]);
       setMistakes((m) => m + 1);
       setSelected(null);
-      logPractice(deckId, tile.pair, false).catch(() => {});
+      logPractice(tile.deck, tile.pair, false).catch(() => {});
       setTimeout(() => setWrong([]), 600);
     }
   };
@@ -143,8 +145,8 @@ export default function StudyMatch() {
             {t("match.mistakes", { count: mistakes })}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to={`/flashcards/deck/${deckId}`} className={btnClass("primary")}>
-              {t("study.backToDeck")}
+            <Link to={studyBack(deckId).to} className={btnClass("primary")}>
+              {t(studyBack(deckId).label)}
             </Link>
             <Btn variant="glass" onClick={restart}>
               {t("match.again")}

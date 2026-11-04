@@ -4,6 +4,7 @@ import { getCards, logPractice } from "../lib/api";
 import { definitionOnly, levenshtein, normalize, shuffle } from "../lib/utils";
 import { QUESTION_TYPES, useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
+import { studyBack } from "../lib/decks";
 import { Btn, ErrorBox, Spinner, fieldCls } from "../components/ui";
 
 const ROUND_SIZE = 7;
@@ -301,14 +302,14 @@ export default function StudyLearn() {
   if (error) return <ErrorBox>{error}</ErrorBox>;
   if (!cards) return <Spinner label={t("learn.preparing")} />;
 
-  const back = `/flashcards/deck/${deckId}`;
+  const { to: back, label: backLabel } = studyBack(deckId);
 
   if (cards.length === 0) {
     return (
       <div className="glass rounded-3xl p-8 text-center">
         <p className="text-xl font-bold">{t("learn.noCards")}</p>
         <Link to={back} className="mt-5 inline-block text-leaf underline">
-          {t("study.backToDeck")}
+          {t(backLabel)}
         </Link>
       </div>
     );
@@ -353,7 +354,7 @@ export default function StudyLearn() {
           <div className="mt-8 flex justify-center gap-3">
             <Btn onClick={() => start(cards)}>{t("learn.again")}</Btn>
             <Link to={back} className="self-center text-sm text-mist underline">
-              {t("study.backToDeck")}
+              {t(backLabel)}
             </Link>
           </div>
         </div>
@@ -369,7 +370,7 @@ export default function StudyLearn() {
 
   // To'g'ri — karta keyingi bosqichga o'tadi; xato — shu raundda bir oz keyin qayta chiqadi
   const finishStep = ({ id, correct }) => {
-    logPractice(deckId, id, correct).catch(() => {});
+    logPractice(cardsById[id].deck_id, id, correct).catch(() => {});
     if (!(id in firstTry)) setFirstTry((f) => ({ ...f, [id]: correct }));
     let q = queue;
     if (correct) {

@@ -4,6 +4,7 @@ import { getHomeData } from "../lib/api";
 import { setDeckOrigin } from "../lib/storage";
 import { useAuth } from "../context/AuthContext";
 import CreateMenu from "../components/CreateMenu";
+import StudyManual from "../components/StudyManual";
 import {
   Badge,
   ErrorBox,
@@ -83,7 +84,16 @@ export default function Home() {
 
   return (
     <div className="space-y-10">
-      <PageTitle right={<CreateMenu />}>{t("home.welcome")}</PageTitle>
+      <PageTitle
+        right={
+          <div className="flex items-center gap-2">
+            <StudyManual />
+            <CreateMenu />
+          </div>
+        }
+      >
+        {t("home.welcome")}
+      </PageTitle>
 
       <section className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="glass rounded-3xl p-7">

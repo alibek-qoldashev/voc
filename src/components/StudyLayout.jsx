@@ -12,6 +12,7 @@ import { save } from "../lib/storage";
 import { getDeck } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { deckIdsOf, studyBack } from "../lib/decks";
+import { MEANINGS } from "../lib/utils";
 import { Icon, Modal, Select, SpeakIcon, Toggle } from "./ui";
 
 const GEAR = [
@@ -204,6 +205,23 @@ function SettingsPopover({ mode, settings, update, onAll, onClose }) {
         </div>
       )}
 
+      {(mode === "test" || mode === "match") && (
+        <label className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white/5 p-5">
+          <span className="text-lg font-bold">{t("meaning.label")}</span>
+          <Select
+            value={settings.meaning}
+            aria-label={t("meaning.label")}
+            onChange={(e) => update({ meaning: e.target.value })}
+          >
+            {MEANINGS.map((m) => (
+              <option key={m} value={m}>
+                {t(`meaning.${m}`)}
+              </option>
+            ))}
+          </Select>
+        </label>
+      )}
+
       {mode === "test" && (
         <div className="mt-4 rounded-2xl bg-white/5 p-5">
           <p className="text-lg font-bold">{t("study.testFormat")}</p>
@@ -261,6 +279,11 @@ export default function StudyLayout() {
   const [allOpen, setAllOpen] = useState(false);
   const [runKey, setRunKey] = useState(0);
   const [testPicked, setTestPicked] = useState(false);
+  const [meaningPicked, setMeaningPicked] = useState(() => new Set());
+  const pickMeaning = (m, meaning) => {
+    setMeaningPicked((s) => new Set(s).add(m));
+    update({ meaning });
+  };
   const [deckName, setDeckName] = useState("");
   const { t } = useLang();
 
@@ -358,7 +381,15 @@ export default function StudyLayout() {
         // runKey o'zgarsa sahifa noldan boshlanadi
         <Outlet
           key={`${pathname}-${runKey}`}
-          context={{ settings, starred, update, testPicked, setTestPicked }}
+          context={{
+            settings,
+            starred,
+            update,
+            testPicked,
+            setTestPicked,
+            meaningPicked,
+            pickMeaning,
+          }}
         />
       )}
 

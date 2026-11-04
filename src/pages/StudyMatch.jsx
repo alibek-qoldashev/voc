@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
-import { definitionOnly, shuffle } from "../lib/utils";
+import { definitionOnly, withMeaning, shuffle } from "../lib/utils";
+import MeaningPicker from "../components/MeaningPicker";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack } from "../lib/decks";
@@ -27,7 +28,8 @@ const deal = (cards, order) =>
 
 export default function StudyMatch() {
   const { deckId } = useParams();
-  const { filter, order, say } = useStudy();
+  const { settings, meaningPicked, pickMeaning, filter, order, say } = useStudy();
+  const uz = settings.meaning === "uzbek";
   const { t } = useLang();
   const [cards, setCards] = useState(null);
   const [tiles, setTiles] = useState([]);
@@ -44,7 +46,9 @@ export default function StudyMatch() {
   useEffect(() => {
     getCards(deckId)
       .then((cs) => {
-        const usable = filter(cs).filter((c) => c.definition || c.translation);
+        const usable = withMeaning(filter(cs), settings.meaning).filter(
+          (c) => c.definition || c.translation,
+        );
         setCards(usable);
         setTiles(deal(usable, order));
       })
@@ -62,13 +66,21 @@ export default function StudyMatch() {
   }, [startedAt, finished]);
 
   if (error) return <ErrorBox>{error}</ErrorBox>;
+  if (!meaningPicked("match")) {
+    return (
+      <MeaningPicker
+        value={settings.meaning}
+        onPick={(m) => pickMeaning("match", m)}
+      />
+    );
+  }
   if (!cards) return <Spinner label={t("match.dealing")} />;
   if (cards.length < 3) {
     return (
       <div className="glass rounded-3xl p-8 text-center">
         <p className="text-xl font-bold">{t("study.notEnough")}</p>
         <p className="mt-1 text-mist">
-          {t("match.needs")}
+          {t(uz ? "meaning.needsUz" : "match.needs", { count: 3 })}
         </p>
         <Link
           to={studyBack(deckId).to}
@@ -102,7 +114,8 @@ export default function StudyMatch() {
       wrong.length
     )
       return;
-    say(tile.text);
+    // O'zbekcha matnni inglizcha ovoz o'qimaydi
+    if (!(uz && tile.kind === "def")) say(tile.text);
     if (!startedAt) setStartedAt(Date.now());
     if (!selected) return setSelected(tile.key);
 

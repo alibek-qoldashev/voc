@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getCards } from "../lib/api";
-import { definitionOnly } from "../lib/utils";
+import { definitionOnly, withMeaning } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack } from "../lib/decks";
@@ -67,6 +67,7 @@ export default function StudyExam() {
       {setupOpen && (
         <ExamSetup
           max={max}
+          maxFor={(m) => Math.min(EXAM_MAX, withMeaning(cards, m).length)}
           initial={config ?? loadExamSetup(Math.min(DEFAULT_COUNT, max), max)}
           onStart={(c) => {
             setConfig(c);

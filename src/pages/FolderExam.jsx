@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { getFolder, getFolderCards } from "../lib/api";
-import { definitionOnly } from "../lib/utils";
+import { definitionOnly, withMeaning } from "../lib/utils";
 import { useLang } from "../lib/i18n";
 import { ErrorBox, Spinner } from "../components/ui";
 import {
@@ -82,6 +82,7 @@ export default function FolderExam() {
   const setup = setupOpen && (
     <ExamSetup
       max={Math.min(EXAM_MAX, words)}
+      maxFor={(m) => Math.min(EXAM_MAX, uniqueTerms(withMeaning(cards, m)))}
       initial={config ?? folderExamDefaults(words)}
       onStart={(c) => {
         setConfig(c);

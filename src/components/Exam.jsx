@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { logPractice } from "../lib/api";
-import { definitionOnly, levenshtein, normalize, shuffle } from "../lib/utils";
+import {
+  MEANINGS,
+  definitionOnly,
+  levenshtein,
+  normalize,
+  shuffle,
+  withMeaning,
+} from "../lib/utils";
+import MeaningPicker from "./MeaningPicker";
 import { load, save } from "../lib/storage";
 import { useLang } from "../lib/i18n";
 import { Btn, Modal, Select, Toggle, fieldCls } from "./ui";
@@ -27,13 +35,15 @@ export function loadExamSetup(defaultCount, max) {
   return {
     count: Math.min(max, Math.max(1, defaultCount)),
     answerWith: ANSWER_WITH.includes(saved.answerWith) ? saved.answerWith : "term",
+    meaning: MEANINGS.includes(saved.meaning) ? saved.meaning : "definition",
     types,
   };
 }
 
 // count — savollardagi so'zlar soni; answerWith — javobda nima bo'ladi:
 // "term" (savolda ta'rif), "definition" (savolda so'z) yoki "both" (aralash)
-export function buildExam(cards, { count, answerWith, types }) {
+export function buildExam(cards, { count, answerWith, types, meaning }) {
+  const uz = meaning === "uzbek";
   // Bir xil so'z bir nechta deckda bo'lsa ham bir marta olinadi
   const seen = new Set();
   const unique = shuffle(cards).filter((c) => {
@@ -88,6 +98,7 @@ export function buildExam(cards, { count, answerWith, types }) {
       type: "choice",
       cards: [card],
       dir: d,
+      uz,
       options: shuffle([card, ...others]),
     });
   });
@@ -106,7 +117,7 @@ export function buildExam(cards, { count, answerWith, types }) {
     });
   });
   byType.write.forEach((card) =>
-    steps.push({ type: "write", cards: [card], dir: dir() }),
+    steps.push({ type: "write", cards: [card], dir: dir(), uz }),
   );
   return { steps: shuffle(steps), total: picked.length };
 }
@@ -115,37 +126,71 @@ export function buildExam(cards, { count, answerWith, types }) {
 const askOf = (card, d) => (d === "term" ? answerOf(card) : card.term);
 const replyOf = (card, d) => (d === "term" ? card.term : answerOf(card));
 
-// Imtihon sozlamalari oynasi
-export function ExamSetup({ max, initial, onStart, onClose }) {
+// Imtihon sozlamalari oynasi: avval "Term – Definition" yoki "Term – Uzbek", keyin sozlamalar.
+// maxFor(meaning) — shu tanlovda nechta so'z bor (o'zbekchasi yo'q kartalar tushib qoladi)
+export function ExamSetup({ max, maxFor = () => max, initial, onStart, onClose }) {
   const { t } = useLang();
+  const [meaning, setMeaning] = useState(initial.meaning || "definition");
+  const [step, setStep] = useState("meaning");
   const [count, setCount] = useState(String(initial.count));
   const [answerWith, setAnswerWith] = useState(initial.answerWith);
   const [types, setTypes] = useState(initial.types);
-  const n = Math.min(max, Math.max(1, parseInt(count, 10) || 0));
+  const limit = Math.max(0, maxFor(meaning));
+  const n = Math.min(limit, Math.max(1, parseInt(count, 10) || 0));
   const anyType = EXAM_TYPES.some((x) => types[x]);
+  const enough = limit >= 2;
 
   const start = (e) => {
     e.preventDefault();
-    if (!anyType) return;
-    save(SETUP_KEY, { answerWith, types });
-    onStart({ count: n, answerWith, types });
+    if (!anyType || !enough) return;
+    save(SETUP_KEY, { answerWith, types, meaning });
+    onStart({ count: n, answerWith, types, meaning });
   };
+
+  if (step === "meaning") {
+    return (
+      <Modal title={t("exam.setupTitle")} onClose={onClose}>
+        <MeaningPicker
+          card={false}
+          value={meaning}
+          onPick={(m) => {
+            setMeaning(m);
+            const l = maxFor(m);
+            setCount((c) => String(Math.min(l, Math.max(1, parseInt(c, 10) || 1))));
+            setStep("setup");
+          }}
+        />
+      </Modal>
+    );
+  }
 
   return (
     <Modal title={t("exam.setupTitle")} onClose={onClose}>
+      <button
+        type="button"
+        onClick={() => setStep("meaning")}
+        className="-mt-3 mb-5 text-sm text-mist hover:text-white"
+      >
+        ← {t(`meaning.pair.${meaning}`)}
+      </button>
+      {!enough && (
+        <p className="mb-4 rounded-2xl bg-rose/10 p-4 text-sm text-rose">
+          {t("meaning.needsUz", { count: 2 })}
+        </p>
+      )}
       <form onSubmit={start}>
         <div className="space-y-4">
           <label className="flex items-center justify-between gap-4">
             <span className="font-bold">
               {t("exam.questions")}{" "}
               <span className="font-normal text-mist">
-                ({t("exam.max", { n: max })})
+                ({t("exam.max", { n: limit })})
               </span>
             </span>
             <input
               type="number"
               min={1}
-              max={max}
+              max={limit}
               value={count}
               onChange={(e) => setCount(e.target.value)}
               onBlur={() => setCount(String(n))}
@@ -160,7 +205,11 @@ export function ExamSetup({ max, initial, onStart, onClose }) {
             >
               {ANSWER_WITH.map((a) => (
                 <option key={a} value={a}>
-                  {t(`exam.answer.${a}`)}
+                  {t(
+                    a === "definition" && meaning === "uzbek"
+                      ? "meaning.uzbek"
+                      : `exam.answer.${a}`,
+                  )}
                 </option>
               ))}
             </Select>
@@ -184,7 +233,7 @@ export function ExamSetup({ max, initial, onStart, onClose }) {
         )}
 
         <div className="mt-8 flex justify-end">
-          <Btn type="submit" disabled={!anyType}>
+          <Btn type="submit" disabled={!anyType || !enough}>
             {t("exam.start")}
           </Btn>
         </div>
@@ -235,7 +284,13 @@ function ChoiceQuestion({ step, onDone, last }) {
     <>
       <section className="glass rounded-3xl p-7">
         <p className="text-sm text-mist">
-          {t(d === "term" ? "test.question" : "test.questionTerm")}
+          {t(
+            d === "term"
+              ? "test.question"
+              : step.uz
+                ? "test.questionTermUz"
+                : "test.questionTerm",
+          )}
         </p>
         <p className="mt-2 text-2xl font-bold leading-snug">{askOf(card, d)}</p>
       </section>
@@ -353,7 +408,7 @@ function WriteQuestion({ step, onDone, last }) {
     <>
       <section className="glass rounded-3xl p-7">
         <p className="text-sm text-mist">
-          {t(d === "term" ? "write.prompt" : "exam.writeDef")}
+          {t(d === "term" ? "write.prompt" : step.uz ? "exam.writeUz" : "exam.writeDef")}
         </p>
         <p className="mt-2 text-2xl font-bold leading-snug">{askOf(card, d)}</p>
       </section>
@@ -466,8 +521,10 @@ function MatchQuestion({ step, onDone }) {
 }
 
 // Imtihonni o'tkazish va natija. back/backLabel — natijadagi qaytish havolasi
-export function ExamRunner({ cards, config, back, backLabel, onSettings, header }) {
+export function ExamRunner({ cards: allCards, config, back, backLabel, onSettings, header }) {
   const { t } = useLang();
+  // "Term – Uzbek" tanlansa ta'rif o'rniga o'zbekcha tarjima
+  const [cards] = useState(() => withMeaning(allCards, config.meaning));
   const [exam, setExam] = useState(() => buildExam(cards, config));
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState([]);

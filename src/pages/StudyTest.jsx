@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCards, logPractice } from "../lib/api";
-import { definitionOnly, shuffle } from "../lib/utils";
+import { definitionOnly, shuffle, withMeaning } from "../lib/utils";
+import MeaningPicker from "../components/MeaningPicker";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack } from "../lib/decks";
@@ -12,11 +13,13 @@ const QUESTION_LIMIT = 20;
 const NEXT_RIGHT_MS = 800;
 
 // Test boshida: savolda ta'rif (variantlar so'zlar) yoki so'z (variantlar ta'riflar)
-function DirectionPicker({ onPick }) {
+function DirectionPicker({ onPick, uz }) {
   const { t } = useLang();
+  // O'zbekcha tanlanganda yozuvlarda "ta'rif" o'rniga "o'zbekcha"
+  const sfx = uz ? "Uz" : "";
   const options = [
-    { ask: "definition", title: "test.dirDef", hint: "test.dirDefHint" },
-    { ask: "term", title: "test.dirTerm", hint: "test.dirTermHint" },
+    { ask: "definition", title: `test.dirDef${sfx}`, hint: `test.dirDefHint${sfx}` },
+    { ask: "term", title: `test.dirTerm${sfx}`, hint: `test.dirTermHint${sfx}` },
   ];
   return (
     <div className="mx-auto max-w-xl">
@@ -44,8 +47,18 @@ function DirectionPicker({ onPick }) {
 
 export default function StudyTest() {
   const { deckId } = useParams();
-  const { settings, update, testPicked, setTestPicked, filter, order, say } =
-    useStudy();
+  const {
+    settings,
+    update,
+    testPicked,
+    setTestPicked,
+    meaningPicked,
+    pickMeaning,
+    filter,
+    order,
+    say,
+  } = useStudy();
+  const uz = settings.meaning === "uzbek";
   // Savolda ko'rsatiladigan tomon va variantlardagi tomon
   const askDef = settings.testAsk !== "term";
   const askText = (c) => (askDef ? definitionOnly(c) : c.term);
@@ -61,7 +74,11 @@ export default function StudyTest() {
   useEffect(() => {
     getCards(deckId)
       .then((cs) =>
-        setCards(filter(cs).filter((c) => c.definition || c.translation)),
+        setCards(
+          withMeaning(filter(cs), settings.meaning).filter(
+            (c) => c.definition || c.translation,
+          ),
+        ),
       )
       .catch((e) => setError(e.message));
   }, [deckId]);
@@ -82,7 +99,8 @@ export default function StudyTest() {
 
   const asked = questions[index]?.card;
   useEffect(() => {
-    if (asked && testPicked) say(askText(asked));
+    // O'zbekcha matnni inglizcha ovoz o'qimaydi
+    if (asked && testPicked && !(uz && askDef)) say(askText(asked));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asked?.id, round, testPicked]);
 
@@ -97,13 +115,21 @@ export default function StudyTest() {
   }, [pickedRight, index]);
 
   if (error) return <ErrorBox>{error}</ErrorBox>;
+  if (!meaningPicked("test")) {
+    return (
+      <MeaningPicker
+        value={settings.meaning}
+        onPick={(m) => pickMeaning("test", m)}
+      />
+    );
+  }
   if (!cards) return <Spinner label={t("test.building")} />;
   if (cards.length < 4) {
     return (
       <div className="glass rounded-3xl p-8 text-center">
         <p className="text-xl font-bold">{t("study.notEnough")}</p>
         <p className="mt-1 text-mist">
-          {t("test.needs")}
+          {t(uz ? "meaning.needsUz" : "test.needs", { count: 4 })}
         </p>
         <Link
           to={studyBack(deckId).to}
@@ -118,6 +144,7 @@ export default function StudyTest() {
   if (!testPicked) {
     return (
       <DirectionPicker
+        uz={uz}
         onPick={(ask) => {
           setTestPicked(true);
           if (ask !== settings.testAsk) update({ testAsk: ask });
@@ -191,7 +218,7 @@ export default function StudyTest() {
 
       <section className="glass mt-6 rounded-3xl p-7">
         <p className="text-sm text-mist">
-          {t(askDef ? "test.question" : "test.questionTerm")}
+          {t(askDef ? "test.question" : uz ? "test.questionTermUz" : "test.questionTerm")}
         </p>
         <p className="mt-2 text-2xl font-bold leading-snug">
           {askText(q.card)}

@@ -49,6 +49,24 @@ export function definitionOnly(card) {
   return def.split(DEF_SPLIT)[0].trim() || def;
 }
 
+// O'zbekcha tarjima: ta'rifdagi chiziqchadan keyingi qism, bo'lmasa kartaning tarjima maydoni
+export function uzbekOf(card) {
+  const parts = (card.definition || "").split(DEF_SPLIT);
+  const after = parts.length > 1 ? parts.slice(1).join(" - ").trim() : "";
+  return after || (card.translation || "").trim();
+}
+
+// Test, Exam va Match: so'z ta'rif bilan ("definition") yoki o'zbekchasi bilan ("uzbek").
+// O'zbekcha tanlansa, tarjimasi bor kartalar olinadi va ta'rif o'rniga tarjima qo'yiladi,
+// shunda qolgan kod (definitionOnly) o'zgarishsiz ishlaydi
+export const MEANINGS = ["definition", "uzbek"];
+export function withMeaning(cards, meaning) {
+  if (meaning !== "uzbek") return cards;
+  return cards
+    .map((c) => ({ ...c, definition: uzbekOf(c), translation: "" }))
+    .filter((c) => c.definition);
+}
+
 export function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {

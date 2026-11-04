@@ -111,10 +111,15 @@ export function Icon({ d, size = 22, fill = "none" }) {
 }
 
 
-export function Modal({ title, onClose, children }) {
+// blur — orqa fonni xiralashtiradi (masalan tarjimon oynasi)
+export function Modal({ title, onClose, children, blur = false }) {
   const { t } = useLang();
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center">
+    <div
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center ${
+        blur ? "backdrop-blur-md" : ""
+      }`}
+    >
       <button
         type="button"
         aria-label={t("common.close")}

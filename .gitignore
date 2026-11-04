@@ -2,3 +2,6 @@ node_modules/
 dist/
 .claude/
 .DS_Store
+
+# Google OAuth fayllari (sir), repoga tushmasin
+client_secret_*.json

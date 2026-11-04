@@ -447,6 +447,16 @@ export async function extractWordsFromPhoto(file) {
   return data.cards ?? [];
 }
 
+// Navbardagi tarjimon: from — "en" yoki "uz"
+export async function translateWord(text, from) {
+  const { data, error } = await supabase.functions.invoke("translate-word", {
+    body: { text, from },
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
 // Papka ichidagi barcha decklarning kartalari (papka imtihoni uchun)
 export async function getFolderCards(folderId) {
   const decks = await supabase

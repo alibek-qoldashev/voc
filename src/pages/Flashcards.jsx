@@ -8,6 +8,7 @@ import {
   setDeckPinned,
 } from "../lib/api";
 import CreateMenu from "../components/CreateMenu";
+import StudyManual from "../components/StudyManual";
 import ItemMenu from "../components/ItemMenu";
 import SortMenu, { SORTS, sortDecks } from "../components/SortMenu";
 import {
@@ -150,7 +151,16 @@ export default function Flashcards() {
 
   return (
     <div>
-      <PageTitle right={<CreateMenu />}>{t("nav.flashcards")}</PageTitle>
+      <PageTitle
+        right={
+          <div className="flex items-center gap-2">
+            <StudyManual />
+            <CreateMenu />
+          </div>
+        }
+      >
+        {t("nav.flashcards")}
+      </PageTitle>
 
       <ErrorBox>{error}</ErrorBox>
 

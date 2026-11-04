@@ -8,7 +8,7 @@ import {
   getDeck,
   updateCard,
 } from "../lib/api";
-import { parseImport, speak } from "../lib/utils";
+import { parseImport, speak, withMeaning } from "../lib/utils";
 import { getDeckOrigin } from "../lib/storage";
 import CardForm from "../components/CardForm";
 import FlipBoard from "../components/FlipBoard";
@@ -20,6 +20,7 @@ import {
   CardImage,
   ErrorBox,
   Field,
+  Icon,
   Spinner,
   SpeakIcon,
   fieldCls,
@@ -35,12 +36,13 @@ function stateBadge(c, t) {
   return <Badge>{t("state.scheduled")}</Badge>;
 }
 
-function ModeTiles({ deckId, count, ready }) {
+function ModeTiles({ deckId, count, ready, uzCount }) {
   const { t } = useLang();
   return (
     <ul className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-6">
       {MODES.map((m) => {
-        const enough = count >= m.min;
+        // Tarjima: o'zbekcha tarjimasi (chiziqchadan keyin) bor kartalar bo'lmasa bosib bo'lmaydi
+        const enough = m.id === "uzbek" ? uzCount >= m.min : count >= m.min;
         const inner = (
           <>
             <span className={`flex items-center gap-2 ${m.color}`}>
@@ -69,7 +71,9 @@ function ModeTiles({ deckId, count, ready }) {
             <span className="mt-1 block text-xs text-mist">
               {enough
                 ? t(`mode.${m.id}.text`)
-                : t("mode.needs", { count: m.min })}
+                : m.id === "uzbek"
+                  ? t("uzbek.none")
+                  : t("mode.needs", { count: m.min })}
             </span>
           </>
         );
@@ -380,12 +384,17 @@ export default function DeckDetail() {
 
   return (
     <div >
-      <Link to={backTo} className="text-sm text-mist hover:text-leaf">
-        ← {origin ? origin.name : t("nav.flashcards")}
-      </Link>
-
-      <div className="mb-8 mt-2 flex flex-wrap items-start justify-between gap-4">
-        <div>
+      {/* Tepa: chapda Back tugmasi, o'rtada nomi va so'zlar soni, o'ngda menyu */}
+      <div className="mb-8 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <Link
+          to={backTo}
+          title={origin ? origin.name : t("nav.flashcards")}
+          className="inline-flex items-center gap-2 justify-self-start rounded-full border border-leaf/50 bg-leaf/10 px-4 py-2.5 text-sm font-bold text-[#8fe36b] transition-colors hover:bg-leaf/20"
+        >
+          <Icon d={["M19 12H5", "m12 19-7-7 7-7"]} size={18} />
+          {t("common.back")}
+        </Link>
+        <div className="min-w-0 text-center">
           <h1 className="text-3xl font-extrabold">{deck.name}</h1>
           {deck.description && (
             <p className="mt-1 text-mist">{deck.description}</p>
@@ -394,6 +403,7 @@ export default function DeckDetail() {
             {t("count.terms", { count: cards.length })}
           </p>
         </div>
+        <div className="justify-self-end">
         {editMode ? (
           <Btn onClick={toggleEdit}>{t("common.done")}</Btn>
         ) : (
@@ -407,6 +417,7 @@ export default function DeckDetail() {
             ]}
           />
         )}
+        </div>
       </div>
 
       {notice && (
@@ -419,7 +430,12 @@ export default function DeckDetail() {
 
       {cards.length > 0 && !editMode && (
         <div className="mb-10">
-          <ModeTiles deckId={deckId} count={cards.length} ready={readyCount} />
+          <ModeTiles
+            deckId={deckId}
+            count={cards.length}
+            ready={readyCount}
+            uzCount={withMeaning(cards, "uzbek").length}
+          />
           <FlipBoard deckId={deckId} cards={cards} onSave={saveCard} />
         </div>
       )}

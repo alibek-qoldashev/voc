@@ -3,6 +3,8 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 import Footer from "./Footer";
+import Translator, { TRANSLATE_ICON } from "./Translator";
+import { Icon } from "./ui";
 import { useLang } from "../lib/i18n";
 
 function HomeIcon() {
@@ -88,6 +90,10 @@ function BurgerIcon({ open }) {
   );
 }
 
+function TranslateNavIcon() {
+  return <Icon d={TRANSLATE_ICON} size={22} />;
+}
+
 const links = [
   { to: "/home", label: "nav.home", Icon: HomeIcon },
   { to: "/folders", label: "nav.folders", Icon: LibraryIcon },
@@ -102,6 +108,7 @@ export default function AppLayout() {
   // O'quv rejimlari va papka imtihoni: footer yashiriladi, sahifa ekranga sig'adi va
   // o'zi aylanmaydi (kerak bo'lsa faqat o'rta qism ichida aylanadi)
   const { pathname } = useLocation();
+  const [translating, setTranslating] = useState(false);
   const studying =
     pathname.startsWith("/flashcards/study/") ||
     /^\/folders\/[^/]+\/exam/.test(pathname);
@@ -142,6 +149,18 @@ export default function AppLayout() {
           </NavLink>
         </li>
       ))}
+      {/* Tarjimon: sahifa emas, istalgan joyda ochiladigan oyna */}
+      <li>
+        <button
+          type="button"
+          onClick={() => setTranslating(true)}
+          title={open ? undefined : t("translator.nav")}
+          className={`flex w-full items-center gap-3 rounded-2xl py-3 text-white transition-colors hover:bg-white/5 ${open ? "px-4" : "justify-center px-0"}`}
+        >
+          <TranslateNavIcon />
+          {open && <span className="truncate">{t("translator.nav")}</span>}
+        </button>
+      </li>
     </ul>
   );
 
@@ -228,7 +247,7 @@ export default function AppLayout() {
         aria-label={t("nav.main")}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-night/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
-        <ul className="mx-auto grid max-w-md grid-cols-4">
+        <ul className="mx-auto grid max-w-md grid-cols-5">
           {[...links, { to: "/profile", label: "nav.profile", Icon: null }].map(
             ({ to, label, Icon }) => (
               <li key={to}>
@@ -255,6 +274,16 @@ export default function AppLayout() {
               </li>
             ),
           )}
+          <li>
+            <button
+              type="button"
+              onClick={() => setTranslating(true)}
+              className="flex w-full flex-col items-center gap-1 py-2.5 text-[11px] font-semibold text-mist transition-colors hover:text-white"
+            >
+              <TranslateNavIcon />
+              {t("translator.nav")}
+            </button>
+          </li>
         </ul>
       </nav>
 
@@ -266,6 +295,8 @@ export default function AppLayout() {
         <Outlet />
         {!studying && <Footer className="mt-16" />}
       </main>
+
+      {translating && <Translator onClose={() => setTranslating(false)} />}
     </div>
   );
 }

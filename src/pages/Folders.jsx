@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { deleteFolder, getFolders, renameFolder, setFolderPinned } from '../lib/api';
 import CreateMenu from '../components/CreateMenu';
+import StudyManual from '../components/StudyManual';
 import ItemMenu from '../components/ItemMenu';
 import { Badge, ErrorBox, PageTitle, Spinner, fieldCls } from '../components/ui';
 import { useLang } from '../lib/i18n';
@@ -62,7 +63,16 @@ export default function Folders() {
 
   return (
     <div>
-      <PageTitle right={<CreateMenu onFolderCreated={load} />}>{t('nav.folders')}</PageTitle>
+      <PageTitle
+        right={
+          <div className="flex items-center gap-2">
+            <StudyManual />
+            <CreateMenu onFolderCreated={load} />
+          </div>
+        }
+      >
+        {t('nav.folders')}
+      </PageTitle>
 
       <ErrorBox>{error}</ErrorBox>
       {!folders && !error && <Spinner />}

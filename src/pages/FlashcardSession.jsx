@@ -29,8 +29,9 @@ const COUNTERS = [
 
 const RATE_KEYS = ["again", "hard", "good", "easy"];
 
-// Qayta chiqadigan karta navbatda kamida shuncha kartadan keyin turadi
-const REQUEUE_GAP = 3;
+// Again bosilgan karta shu raundning o'zida shuncha kartadan keyin qaytadi:
+// 1-marta 3 tadan, 2-marta 2 tadan, keyin har safar 1 tadan keyin (Good/Easy bosilguncha)
+const AGAIN_GAPS = [3, 2, 1];
 
 const rateStyle = [
   "border-rose/50 text-rose hover:bg-rose/10",
@@ -53,7 +54,12 @@ export default function FlashcardSession() {
           .filter((i) => i.card)
       : items;
   const { t } = useLang();
+  // Sessiya raundlarda: avval hamma kartalar bir marta (yangi -> learning), keyin learning'dagilar
+  // yana bir marta aralash holda (learning -> o'rganildi). queue — joriy raund, later — keyingi raund
   const [queue, setQueue] = useState(null);
+  const [later, setLater] = useState([]);
+  // Har kartada ketma-ket nechta Again bosilgani (oraliqni 3 -> 2 -> 1 qisqartirish uchun)
+  const agains = useRef({});
   const [flipped, setFlipped] = useState(false);
   const [reverse, setReverse] = useState(false);
   const [done, setDone] = useState(0);
@@ -144,22 +150,40 @@ export default function FlashcardSession() {
         rating,
         wasNew: current.srs.state === "new",
       }).catch((e) => setError(t("anki.saveError", { msg: e.message })));
-      setQueue((q) => {
-        const [head, ...rest] = q;
-        if (next.due - now >= LEARN_AGAIN_WINDOW) return rest;
-        // Tez qaytadigan karta: aralashtirish yoqilsa navbatning tasodifiy joyiga
-        // (har aylanishda tartib boshqacha bo'ladi), aks holda oxiriga
-        const item = { card: head.card, srs: next, seq: seq.current++ };
-        const from = Math.min(REQUEUE_GAP, rest.length);
-        const at = settings.shuffle
-          ? from + Math.floor(Math.random() * (rest.length - from + 1))
-          : rest.length;
-        return [...rest.slice(0, at), item, ...rest.slice(at)];
-      });
+      const [head, ...rest] = queue;
+      const id = head.card.id;
+      const item = { card: head.card, srs: next, seq: head.seq };
+      let nextQueue = rest;
+      let nextLater = later;
+      // Raund tugasa keyingisi boshlanadi: learning'dagi kartalar aralash holda
+      const newRound = () => {
+        if (nextQueue.length || !nextLater.length) return;
+        nextQueue = settings.shuffle
+          ? shuffle(nextLater)
+          : [...nextLater].sort((a, b) => a.seq - b.seq);
+        nextLater = [];
+      };
+
+      if (rating === 0) {
+        // Again: shu raundda bir necha kartadan keyin yana chiqadi
+        const n = (agains.current[id] || 0) + 1;
+        agains.current[id] = n;
+        newRound();
+        const gap = AGAIN_GAPS[Math.min(n, AGAIN_GAPS.length) - 1];
+        const at = Math.min(gap, nextQueue.length);
+        nextQueue = [...nextQueue.slice(0, at), item, ...nextQueue.slice(at)];
+      } else {
+        delete agains.current[id];
+        // Hali learning'da (daqiqalik qadam) — keyingi raundda; o'rganilgan bo'lsa sessiyadan chiqadi
+        if (next.due - now < LEARN_AGAIN_WINDOW) nextLater = [...nextLater, item];
+        newRound();
+      }
+      setQueue(nextQueue);
+      setLater(nextLater);
       setFlipped(false);
       setDone((d) => d + 1);
     },
-    [current, settings.shuffle],
+    [current, queue, later, settings.shuffle],
   );
 
   useEffect(() => {
@@ -273,14 +297,14 @@ export default function FlashcardSession() {
         className="mb-1 flex justify-between text-sm text-mist"
         aria-live="polite"
       >
-        <span>{t("study.left", { n: queue.length })}</span>
+        <span>{t("study.left", { n: queue.length + later.length })}</span>
         <span>{t("anki.answeredCount", { n: done })}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
         <div
           className="h-full bg-leaf transition-all"
           style={{
-            width: `${(done / Math.max(1, done + queue.length)) * 100}%`,
+            width: `${(done / Math.max(1, done + queue.length + later.length)) * 100}%`,
           }}
         />
       </div>
@@ -324,7 +348,7 @@ export default function FlashcardSession() {
               className={`${cls} ${current.srs.state === state ? "underline underline-offset-4" : "opacity-80"}`}
             >
               {t(`anki.state.${state}`)}{" "}
-              {queue.filter((i) => i.srs.state === state).length}
+              {[...queue, ...later].filter((i) => i.srs.state === state).length}
             </span>
           ))}
         </div>

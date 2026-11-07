@@ -97,17 +97,17 @@ function ChoiceStep({ card, all, onDone }) {
         <p className="text-sm text-mist">{t("learn.choose")}</p>
         <p className="mt-2 text-2xl font-bold leading-snug">{answerOf(card)}</p>
       </section>
-      <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+      <ul className="mt-5 grid auto-rows-fr gap-3 sm:grid-cols-2">
         {options.map((o) => {
           const isAnswer = picked && o.id === card.id;
           const isWrongPick = picked === o.id && o.id !== card.id;
           return (
-            <li key={o.id}>
+            <li key={o.id} className="flex">
               <button
                 type="button"
                 disabled={!!picked}
                 onClick={() => setPicked(o.id)}
-                className={`w-full rounded-2xl border px-4 py-4 text-left font-bold transition-colors ${
+                className={`flex min-h-[4.5rem] w-full items-center rounded-2xl border px-4 py-4 text-left font-bold transition-colors ${
                   isAnswer
                     ? "border-leaf bg-leaf/15 text-[#8fe36b]"
                     : isWrongPick

@@ -7,7 +7,7 @@ import {
   previewLabels,
   schedule,
 } from "../lib/srs";
-import { maskTerm, shuffle, speak, withMeaning } from "../lib/utils";
+import { maskTerm, shuffle, speak, uzbekOf, withMeaning } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack } from "../lib/decks";
@@ -46,13 +46,16 @@ export default function FlashcardSession() {
   const { settings, meaning, filter, order, say } = useStudy();
   const uz = meaning === "uzbek";
   // Tarjima rejimida orqa tomonda o'zbekcha tarjima; tarjimasi yo'q kartalar chiqmaydi.
-  // Takrorlash jadvali oddiy Anki bilan bir xil (karta bitta)
+  // Takrorlash jadvali va kunlik limit oddiy Anki'dan alohida (uz_ ustunlari)
   const meant = (items) =>
     uz
       ? items
           .map((i) => ({ ...i, card: withMeaning([i.card], "uzbek")[0] }))
           .filter((i) => i.card)
       : items;
+  const scope = uz
+    ? { meaning: "uzbek", keep: (c) => Boolean(uzbekOf(c)) }
+    : { meaning: "definition" };
   const { t } = useLang();
   // Sessiya raundlarda: avval hamma kartalar bir marta (yangi -> learning), keyin learning'dagilar
   // yana bir marta aralash holda (learning -> o'rganildi). queue — joriy raund, later — keyingi raund
@@ -73,10 +76,10 @@ export default function FlashcardSession() {
 
   useEffect(() => {
     let alive = true;
-    Promise.all([getStudyQueue(deckId), countNewCards(deckId)])
+    Promise.all([getStudyQueue(deckId, scope), countNewCards(deckId, scope)])
       .then(([all, newTotal]) => {
         const items = order(meant(filter(all, (i) => i.card.id)));
-        const newInQueue = all.filter((i) => i.card.srs_state === "new").length;
+        const newInQueue = all.filter((i) => i.srs.state === "new").length;
         if (alive) {
           setQueue(numbered(items));
           setTotal(items.length);
@@ -92,9 +95,9 @@ export default function FlashcardSession() {
   // Limitdan tashqari: kutib turgan yangi kartalarni hozir o'qish
   const studyWaiting = async () => {
     try {
-      const extra = await getStudyQueue(deckId, { extraNew: waiting });
+      const extra = await getStudyQueue(deckId, { ...scope, extraNew: waiting });
       const items = order(
-        meant(filter(extra, (i) => i.card.id)).filter((i) => i.card.srs_state === "new"),
+        meant(filter(extra, (i) => i.card.id)).filter((i) => i.srs.state === "new"),
       );
       setQueue(numbered(items));
       setTotal((n) => n + items.length);
@@ -149,6 +152,7 @@ export default function FlashcardSession() {
         srs: next,
         rating,
         wasNew: current.srs.state === "new",
+        meaning: scope.meaning,
       }).catch((e) => setError(t("anki.saveError", { msg: e.message })));
       const [head, ...rest] = queue;
       const id = head.card.id;

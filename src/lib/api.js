@@ -9,25 +9,35 @@ const must = ({ data, error }) => {
 };
 
 // ---- DB qatori <-> SRS obyekti --------------------------------------
-export const srsFromRow = (r) => ({
-  state: r.srs_state,
-  ease: r.ease,
-  interval: r.interval_days,
-  due: new Date(r.due).getTime(),
-  reps: r.reps,
-  lapses: r.lapses,
-  step: r.learn_step ?? 0,
-});
+// Oddiy Anki "srs_state, ease, ..." ustunlarida, Translation Anki esa "uz_" bilan
+// boshlanadigan alohida ustunlarda saqlanadi: ikkalasining holati va limiti mustaqil
+const pre = (meaning) => (meaning === "uzbek" ? "uz_" : "");
 
-const srsToRow = (s) => ({
-  srs_state: s.state,
-  ease: s.ease,
-  interval_days: s.interval,
-  due: new Date(s.due).toISOString(),
-  reps: s.reps,
-  lapses: s.lapses,
-  learn_step: s.step ?? 0,
-});
+export const srsFromRow = (r, meaning) => {
+  const p = pre(meaning);
+  return {
+    state: r[`${p}srs_state`],
+    ease: r[`${p}ease`],
+    interval: r[`${p}interval_days`],
+    due: new Date(r[`${p}due`]).getTime(),
+    reps: r[`${p}reps`],
+    lapses: r[`${p}lapses`],
+    step: r[`${p}learn_step`] ?? 0,
+  };
+};
+
+const srsToRow = (s, meaning) => {
+  const p = pre(meaning);
+  return {
+    [`${p}srs_state`]: s.state,
+    [`${p}ease`]: s.ease,
+    [`${p}interval_days`]: s.interval,
+    [`${p}due`]: new Date(s.due).toISOString(),
+    [`${p}reps`]: s.reps,
+    [`${p}lapses`]: s.lapses,
+    [`${p}learn_step`]: s.step ?? 0,
+  };
+};
 
 // ---- Decklar -----------------------------------------------------------
 export async function getDecksWithStats() {
@@ -132,8 +142,11 @@ export const deleteCard = (id) =>
   supabase.from("cards").delete().eq("id", id).then(must);
 
 // ---- Takrorlash ----------------------------------------------------------
+// meaning: "definition" — oddiy Anki, "uzbek" — Translation Anki (alohida jadval va limit).
+// keep: kartani shu rejimda o'qish mumkinmi (masalan, o'zbekcha tarjimasi bormi)
+
 // Bugun yana nechta YANGI karta o'rganish mumkin (kunlik limit - bugun ko'rilgan yangilar)
-export async function getNewLeft() {
+export async function getNewLeft(meaning = "definition") {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const [profile, logs] = await Promise.all([
@@ -142,61 +155,83 @@ export async function getNewLeft() {
       .from("review_logs")
       .select("id", { count: "exact", head: true })
       .eq("was_new", true)
+      .eq("meaning", meaning)
       .gte("reviewed_at", start.toISOString()),
   ]);
   if (logs.error) throw logs.error;
   return Math.max(0, (profile?.new_per_day ?? 20) - (logs.count ?? 0));
 }
 
+const always = () => true;
+
 // deckId: 'all' yoki deck id.
 // extraNew: kunlik limit tugagan bo'lsa ham shuncha yangi kartani qo'shib beradi ("Hozir o'qish")
-export async function getStudyQueue(deckId, { extraNew = 0 } = {}) {
-  const left = extraNew || (await getNewLeft());
+export async function getStudyQueue(
+  deckId,
+  { extraNew = 0, meaning = "definition", keep = always } = {},
+) {
+  const p = pre(meaning);
+  const left = extraNew || (await getNewLeft(meaning));
   // Daqiqalik qadamdagi kartalar vaqti biroz oldinroq bo'lsa ham olinadi (Anki'dagi "learn ahead"),
   // shunda sahifa qayta ochilganda ular navbatdan yo'qolib qolmaydi
   let dueQ = supabase
     .from("cards")
     .select("*")
-    .neq("srs_state", "new")
-    .lte("due", new Date(Date.now() + LEARN_AGAIN_WINDOW).toISOString())
-    .order("due", { ascending: true })
+    .neq(`${p}srs_state`, "new")
+    .lte(`${p}due`, new Date(Date.now() + LEARN_AGAIN_WINDOW).toISOString())
+    .order(`${p}due`, { ascending: true })
     .limit(200);
+  // keep bilan saralanadigan bo'lsa limitni keyin qo'yamiz (tarjimasiz kartalar limitni yemasin)
   let newQ = supabase
     .from("cards")
     .select("*")
-    .eq("srs_state", "new")
+    .eq(`${p}srs_state`, "new")
     .order("position", { ascending: true })
     .order("created_at", { ascending: true })
-    .limit(left);
+    .limit(keep === always ? left : 2000);
   dueQ = whereDeck(dueQ, deckId);
   newQ = whereDeck(newQ, deckId);
   const [due, fresh] = await Promise.all([
     dueQ.then(must),
     left > 0 ? newQ.then(must) : Promise.resolve([]),
   ]);
-  return [...due, ...fresh].map((card) => ({ card, srs: srsFromRow(card) }));
+  return [...due.filter(keep), ...fresh.filter(keep).slice(0, left)].map((card) => ({
+    card,
+    srs: srsFromRow(card, meaning),
+  }));
 }
 
 // Deckdagi (yoki hamma decklardagi) hali o'rganilmagan yangi kartalar soni
-export async function countNewCards(deckId) {
+export async function countNewCards(deckId, { meaning = "definition", keep } = {}) {
+  const p = pre(meaning);
+  if (keep) {
+    let q = supabase
+      .from("cards")
+      .select("id, definition, translation")
+      .eq(`${p}srs_state`, "new")
+      .limit(5000);
+    q = whereDeck(q, deckId);
+    return (await q.then(must)).filter(keep).length;
+  }
   let q = supabase
     .from("cards")
     .select("id", { count: "exact", head: true })
-    .eq("srs_state", "new");
+    .eq(`${p}srs_state`, "new");
   q = whereDeck(q, deckId);
   const { count, error } = await q;
   if (error) throw error;
   return count ?? 0;
 }
 
-export async function gradeCard({ card, srs, rating, wasNew }) {
+export async function gradeCard({ card, srs, rating, wasNew, meaning = "definition" }) {
   const results = await Promise.all([
-    supabase.from("cards").update(srsToRow(srs)).eq("id", card.id),
+    supabase.from("cards").update(srsToRow(srs, meaning)).eq("id", card.id),
     supabase.from("review_logs").insert({
       card_id: card.id,
       deck_id: card.deck_id,
       rating,
       was_new: wasNew,
+      meaning,
     }),
     supabase
       .from("decks")

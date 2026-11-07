@@ -5,6 +5,7 @@ import { setDeckOrigin } from "../lib/storage";
 import { useAuth } from "../context/AuthContext";
 import CreateMenu from "../components/CreateMenu";
 import StudyManual from "../components/StudyManual";
+import ThemeToggle from "../components/ThemeToggle";
 import {
   Badge,
   ErrorBox,
@@ -89,6 +90,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <StudyManual />
             <CreateMenu />
+            <ThemeToggle />
           </div>
         }
       >

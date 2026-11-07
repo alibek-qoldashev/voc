@@ -53,6 +53,8 @@ export default {
   "common.rename": "Rename",
   "common.done": "Done",
   "common.continue": "Continue",
+  "theme.toLight": "Switch to light mode",
+  "theme.toDark": "Switch to dark mode",
   "common.back": "Back",
   "uzbek.none": "No Uzbek translations in this deck",
   "translator.nav": "Translate",

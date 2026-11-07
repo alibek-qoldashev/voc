@@ -9,6 +9,7 @@ import {
 } from "../lib/api";
 import CreateMenu from "../components/CreateMenu";
 import StudyManual from "../components/StudyManual";
+import ThemeToggle from "../components/ThemeToggle";
 import ItemMenu from "../components/ItemMenu";
 import SortMenu, { SORTS, sortDecks } from "../components/SortMenu";
 import {
@@ -156,6 +157,7 @@ export default function Flashcards() {
           <div className="flex items-center gap-2">
             <StudyManual />
             <CreateMenu />
+            <ThemeToggle />
           </div>
         }
       >

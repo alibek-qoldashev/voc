@@ -13,7 +13,7 @@ import { load as loadPref, save as savePref } from "../lib/storage";
 import FolderPicker from "../components/FolderPicker";
 import { EXAM_MIN_WORDS, folderExamDefaults } from "./FolderExam";
 import { EXAM_MAX, ExamSetup } from "../components/Exam";
-import { Badge, Btn, ErrorBox, Spinner, btnClass } from "../components/ui";
+import { Badge, Btn, ErrorBox, Icon, Spinner, btnClass } from "../components/ui";
 import { useLang } from "../lib/i18n";
 
 function PlusIcon() {
@@ -149,13 +149,18 @@ export default function FolderDetail() {
 
   return (
     <div>
-      <Link to="/folders" className="text-sm text-mist hover:text-leaf">
-        ← {t("nav.folders")}
-      </Link>
-
-      <div className="mb-8 mt-2 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold">{folder.name}</h1>
+      {/* Tepa: chapda Back tugmasi, o'rtada nomi va decklar soni, o'ngda Study all */}
+      <div className="mb-8 grid grid-cols-[1fr_auto] items-center gap-4 sm:grid-cols-[1fr_auto_1fr]">
+        <Link
+          to="/folders"
+          title={t("nav.folders")}
+          className="inline-flex items-center gap-2 justify-self-start rounded-full border border-leaf/50 bg-leaf/10 px-4 py-2.5 text-sm font-bold text-[#8fe36b] transition-colors hover:bg-leaf/20"
+        >
+          <Icon d={["M19 12H5", "m12 19-7-7 7-7"]} size={18} />
+          {t("common.back")}
+        </Link>
+        <div className="order-last col-span-2 min-w-0 text-center sm:order-none sm:col-span-1">
+          <h1 className="text-2xl font-extrabold">{folder.name}</h1>
           {folder.description && (
             <p className="mt-1 text-mist">{folder.description}</p>
           )}
@@ -165,23 +170,25 @@ export default function FolderDetail() {
             </Badge>
           </div>
         </div>
-        {inside.length > 0 && (
-          <div className="flex items-center gap-2">
-            {totalWords >= EXAM_MIN_WORDS ? (
-              <Btn className="h-[46px]" onClick={() => setExamOpen(true)}>
-                {t("exam.studyAll")}
-              </Btn>
-            ) : (
-              <span
-                title={t("exam.needs", { count: EXAM_MIN_WORDS })}
-                className={btnClass("primary", "h-[46px] cursor-not-allowed opacity-40")}
-              >
-                {t("exam.studyAll")}
-              </span>
-            )}
-            {inside.length > 1 && <SortMenu value={sortBy} onChange={changeSort} />}
-          </div>
-        )}
+        <div className="flex items-center gap-2 justify-self-end">
+          {inside.length > 0 && (
+            <>
+              {totalWords >= EXAM_MIN_WORDS ? (
+                <Btn className="h-[46px]" onClick={() => setExamOpen(true)}>
+                  {t("exam.studyAll")}
+                </Btn>
+              ) : (
+                <span
+                  title={t("exam.needs", { count: EXAM_MIN_WORDS })}
+                  className={btnClass("primary", "h-[46px] cursor-not-allowed opacity-40")}
+                >
+                  {t("exam.studyAll")}
+                </span>
+              )}
+              {inside.length > 1 && <SortMenu value={sortBy} onChange={changeSort} />}
+            </>
+          )}
+        </div>
       </div>
 
       <ErrorBox>{error}</ErrorBox>

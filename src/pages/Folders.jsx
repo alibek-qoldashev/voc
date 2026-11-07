@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { deleteFolder, getFolders, renameFolder, setFolderPinned } from '../lib/api';
 import CreateMenu from '../components/CreateMenu';
 import StudyManual from '../components/StudyManual';
+import ThemeToggle from '../components/ThemeToggle';
 import ItemMenu from '../components/ItemMenu';
 import { Badge, ErrorBox, PageTitle, Spinner, fieldCls } from '../components/ui';
 import { useLang } from '../lib/i18n';
@@ -68,6 +69,7 @@ export default function Folders() {
           <div className="flex items-center gap-2">
             <StudyManual />
             <CreateMenu onFolderCreated={load} />
+            <ThemeToggle />
           </div>
         }
       >
@@ -79,7 +81,8 @@ export default function Folders() {
 
       {folders && folders.length > 0 && (
         <input
-          className={`${fieldCls} mb-6 max-w-sm`}
+          type="search"
+          className={`${fieldCls.replace("rounded-xl", "rounded-full")} mx-auto mb-6 block max-w-md px-5`}
           placeholder={t('folders.search')}
           aria-label={t('folders.search')}
           value={query}

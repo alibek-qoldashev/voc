@@ -53,6 +53,8 @@ export default {
   "common.rename": "Переименовать",
   "common.done": "Готово",
   "common.continue": "Продолжить",
+  "theme.toLight": "Светлая тема",
+  "theme.toDark": "Тёмная тема",
   "common.back": "Назад",
   "uzbek.none": "В этом наборе нет узбекских переводов",
   "translator.nav": "Перевод",

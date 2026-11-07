@@ -53,6 +53,8 @@ export default {
   "common.rename": "Nomini o'zgartirish",
   "common.done": "Tayyor",
   "common.continue": "Davom etish",
+  "theme.toLight": "Yorug' rejimga o'tish",
+  "theme.toDark": "Qorong'i rejimga o'tish",
   "common.back": "Orqaga",
   "uzbek.none": "Bu deckda o'zbekcha tarjima yo'q",
   "translator.nav": "Tarjima",

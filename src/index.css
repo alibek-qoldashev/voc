@@ -16,9 +16,48 @@ body {
   background: var(--color-night);
 }
 body {
-  color: #fff;
+  color: var(--color-white);
   font-family: var(--font-sans);
   min-height: 100vh;
+}
+
+/* Yorug' rejim: ranglar o'zgaruvchi orqali almashadi. "white" — asosiy matn rangi, shuning uchun
+   text-white, bg-white/5, border-white/15 kabi klasslar o'zi to'q rangga aylanadi */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-night: #f3f5fb;
+  --color-panel: #ffffff;
+  --color-white: #141a38;
+  --color-mist: #5a6382;
+  --color-leaf: #43a026;
+  --color-rose: #d23a4c;
+  --color-amber: #b26a00;
+  --color-sky: #1f74c8;
+}
+:root[data-theme="light"] .glass {
+  background: linear-gradient(145deg, #ffffff, #f8f9fd);
+  border-color: rgba(20, 26, 56, 0.1);
+  box-shadow: 0 1px 3px rgba(20, 26, 56, 0.06);
+}
+:root[data-theme="light"] .text-night {
+  color: #000824;
+}
+:root[data-theme="light"] .placeholder\:text-night\/50::placeholder {
+  color: rgba(0, 8, 36, 0.5);
+}
+:root[data-theme="light"] .bg-white {
+  background-color: #fff;
+}
+:root[data-theme="light"] .text-\[\#8fe36b\],
+:root[data-theme="light"] .text-\[\#a6ee86\] {
+  color: #2e7d15;
+}
+:root[data-theme="light"] .bg-\[\#141831\],
+:root[data-theme="light"] .bg-\[\#0b0d26\] {
+  background-color: #ffffff;
+}
+:root[data-theme="light"] :focus-visible {
+  outline-color: #2e7d15;
 }
 
 /* Figma'dagi shisha panel */

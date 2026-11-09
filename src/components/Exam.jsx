@@ -545,10 +545,8 @@ export function ExamRunner({ cards: allCards, config, back, backLabel, onSetting
             {t("test.score", { n: right, total: exam.total })}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Btn onClick={restart}>{t("exam.again")}</Btn>
-            <Btn variant="glass" onClick={onSettings}>
-              {t("exam.changeSettings")}
-            </Btn>
+            {/* New exam: avval sozlamalar oynasi chiqadi, sozlangach yangi imtihon boshlanadi */}
+            <Btn onClick={onSettings ?? restart}>{t("exam.again")}</Btn>
             <Link to={back} className={backLinkCls}>
               {backLabel}
             </Link>

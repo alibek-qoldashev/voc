@@ -124,7 +124,7 @@ const askOf = (card, d) => (d === "term" ? answerOf(card) : card.term);
 const replyOf = (card, d) => (d === "term" ? card.term : answerOf(card));
 
 // Imtihon sozlamalari oynasi. meaning — "uzbek" bo'lsa (Tarjima rejimi) javob o'zbekcha tarjima
-export function ExamSetup({ max, meaning = "definition", initial, onStart, onClose, onBack }) {
+export function ExamSetupForm({ max, meaning = "definition", initial, onStart, onBack }) {
   const { t } = useLang();
   const [count, setCount] = useState(String(initial.count));
   const [answerWith, setAnswerWith] = useState(initial.answerWith);
@@ -142,7 +142,7 @@ export function ExamSetup({ max, meaning = "definition", initial, onStart, onClo
   };
 
   return (
-    <Modal title={t("exam.setupTitle")} onClose={onClose}>
+    <>
       {!enough && (
         <p className="mb-4 rounded-2xl bg-rose/10 p-4 text-sm text-rose">
           {t("meaning.needsUz", { count: 2 })}
@@ -213,6 +213,16 @@ export function ExamSetup({ max, meaning = "definition", initial, onStart, onClo
           </Btn>
         </div>
       </form>
+    </>
+  );
+}
+
+// Oynadagi ko'rinishi (deck Exam rejimi va papkadagi Study all)
+export function ExamSetup({ onClose, ...props }) {
+  const { t } = useLang();
+  return (
+    <Modal title={t("exam.setupTitle")} onClose={onClose}>
+      <ExamSetupForm {...props} />
     </Modal>
   );
 }

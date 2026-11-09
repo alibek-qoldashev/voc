@@ -2,13 +2,24 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getDecksWithStats } from "../lib/api";
 import { studyPath } from "../lib/decks";
-import { MODES } from "../lib/modes";
+import { MODES, UZBEK_MODES } from "../lib/modes";
 import { useLang } from "../lib/i18n";
-import { Btn, ErrorBox, Icon, Modal, Spinner, fieldCls } from "./ui";
+import { BackBtn, Btn, ErrorBox, Icon, Modal, Spinner, fieldCls } from "./ui";
+import { EXAM_MAX, ExamSetupForm, loadExamSetup } from "./Exam";
 
 const PLUS = ["M12 5v14", "M5 12h14"];
 const CHECK = ["m5 12 5 5 9-10"];
 const CLOSE = ["M18 6 6 18", "m6 6 12 12"];
+
+// Oyna bosqichlari: decklar -> usul -> (Test yo'nalishi | Exam sozlamalari | Translation usullari)
+const TITLES = {
+  pick: "manual.title",
+  mode: "manual.modeTitle",
+  uzbek: "uzbek.title",
+  test: "test.chooseTitle",
+  exam: "exam.setupTitle",
+};
+const DEFAULT_EXAM = 20;
 
 // "Study manual": bir nechta deckni qo'lda tanlab, bitta o'quv sessiyasiga birlashtirish.
 // Tanlov saqlanmaydi — har safar yangidan tanlanadi
@@ -68,6 +79,25 @@ function ManualModal({ onClose, initialPicked }) {
   const toggle = (id) =>
     setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const words = picked.reduce((s, id) => s + (byId[id]?.total ?? 0), 0);
+  const examMax = Math.min(EXAM_MAX, words);
+  // Translation ichidan tanlangan Test/Exam o'zbekcha tarjima bilan
+  const [uz, setUz] = useState(false);
+
+  // Usulga o'tish. state: Study manual'ga qaytish uchun ma'lumot va oynada tanlangan sozlamalar
+  const go = (mode, inUz, extra = {}) => {
+    navigate(`${studyPath(picked, mode)}${inUz ? "?m=uz" : ""}`, {
+      state: { manual: { from: location.pathname, picked }, ...extra },
+    });
+  };
+  // Test, Exam va Translation shu oynaning o'zida davom etadi, qolganlari darrov ochiladi
+  const choose = (id, inUz) => {
+    if (id === "uzbek") return setStep("uzbek");
+    if (id === "test" || id === "exam") {
+      setUz(inUz);
+      return setStep(id);
+    }
+    go(id, inUz);
+  };
 
   const pills = picked.length > 0 && (
     <ul className="mb-4 flex flex-wrap gap-2" aria-label={t("manual.selected")}>
@@ -93,7 +123,7 @@ function ManualModal({ onClose, initialPicked }) {
 
   return (
     <Modal
-      title={step === "pick" ? t("manual.title") : t("manual.modeTitle")}
+      title={t(TITLES[step])}
       onClose={onClose}
     >
       <ErrorBox>{error}</ErrorBox>
@@ -162,46 +192,94 @@ function ManualModal({ onClose, initialPicked }) {
       {decks && step === "mode" && (
         <>
           {pills}
-          <ul className="grid auto-rows-fr gap-3 sm:grid-cols-2">
-            {MODES.map((m) => {
-              const ok = words >= m.min;
-              return (
-                <li key={m.id} className="flex">
-                  <button
-                    type="button"
-                    disabled={!ok}
-                    title={ok ? undefined : t("mode.needs", { count: m.min })}
-                    onClick={() =>
-                      navigate(studyPath(picked, m.id), {
-                        state: { manual: { from: location.pathname, picked } },
-                      })
-                    }
-                    className="glass flex h-full w-full items-start gap-3 rounded-2xl p-4 text-left transition-colors hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <span className={m.color}>
-                      <Icon d={m.icon} size={22} />
-                    </span>
-                    <span>
-                      <span className="block font-bold">{t(`mode.${m.id}`)}</span>
-                      <span className="mt-0.5 block text-xs text-mist">
-                        {t(`mode.${m.id}.text`)}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <button
-            type="button"
-            onClick={() => setStep("pick")}
-            className="mt-5 inline-flex items-center gap-2 rounded-full border border-leaf/50 bg-leaf/10 px-4 py-2.5 text-sm font-bold text-[#8fe36b] transition-colors hover:bg-leaf/20"
-          >
-            <Icon d={["M19 12H5", "m12 19-7-7 7-7"]} size={18} />
+          <ModeGrid count={words} modes={MODES} onPick={(id) => choose(id, false)} />
+          <BackBtn onClick={() => setStep("pick")} className="mt-5">
             {t("manual.back")}
-          </button>
+          </BackBtn>
         </>
       )}
+
+      {decks && step === "uzbek" && (
+        <>
+          {pills}
+          <ModeGrid
+            count={words}
+            modes={UZBEK_MODES.map((id) => MODES.find((m) => m.id === id))}
+            textKey={(id) => `uzbek.text.${id}`}
+            onPick={(id) => choose(id, true)}
+          />
+          <BackBtn onClick={() => setStep("mode")} className="mt-5">
+            {t("study.backModes")}
+          </BackBtn>
+        </>
+      )}
+
+      {decks && step === "test" && (
+        <>
+          {pills}
+          <p className="text-mist">{t("test.chooseHint")}</p>
+          <div className="mt-4 grid gap-3">
+            {["definition", "term"].map((ask) => {
+              const key = ask === "definition" ? "Def" : "Term";
+              const sfx = uz ? "Uz" : "";
+              return (
+                <button
+                  key={ask}
+                  type="button"
+                  onClick={() => go("test", uz, { testAsk: ask })}
+                  className="rounded-2xl border border-white/15 bg-white/5 p-5 text-left transition-colors hover:border-leaf hover:bg-leaf/10"
+                >
+                  <span className="block text-lg font-bold">{t(`test.dir${key}${sfx}`)}</span>
+                  <span className="mt-1 block text-sm text-mist">
+                    {t(`test.dir${key}Hint${sfx}`)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <BackBtn onClick={() => setStep(uz ? "uzbek" : "mode")} className="mt-5">
+            {t("study.backModes")}
+          </BackBtn>
+        </>
+      )}
+
+      {decks && step === "exam" && (
+        <ExamSetupForm
+          max={examMax}
+          meaning={uz ? "uzbek" : "definition"}
+          initial={loadExamSetup(Math.min(DEFAULT_EXAM, examMax), examMax)}
+          onStart={(config) => go("exam", uz, { examConfig: config })}
+          onBack={() => setStep(uz ? "uzbek" : "mode")}
+        />
+      )}
     </Modal>
+  );
+}
+
+// Usullar katakchalari (hammasi bir xil o'lchamda)
+function ModeGrid({ count, modes, onPick, textKey = (id) => `mode.${id}.text` }) {
+  const { t } = useLang();
+  return (
+    <ul className="grid auto-rows-fr gap-3 sm:grid-cols-2">
+      {modes.map((m) => (
+        <li key={m.id} className="flex">
+          <button
+            type="button"
+            disabled={count < m.min}
+            title={count < m.min ? t("mode.needs", { count: m.min }) : undefined}
+            onClick={() => onPick(m.id)}
+            className="glass flex h-full w-full items-start gap-3 rounded-2xl p-4 text-left transition-colors hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <span className={m.color}>
+              <Icon d={m.icon} size={22} />
+            </span>
+            <span>
+              <span className="block font-bold">{t(`mode.${m.id}`)}</span>
+              <span className="mt-0.5 block text-xs text-mist">{t(textKey(m.id))}</span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }

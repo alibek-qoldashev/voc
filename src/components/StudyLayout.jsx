@@ -254,15 +254,24 @@ function SettingsPopover({ mode, settings, update, onAll, onClose }) {
 // Learn, Anki, Test, Write va Match sahifalarining umumiy tepa paneli
 export default function StudyLayout() {
   const { deckId } = useParams();
-  const { pathname, search } = useLocation();
+  const location = useLocation();
+  const { pathname, search } = location;
   const meaning = new URLSearchParams(search).get("m") === "uz" ? "uzbek" : "definition";
   const navigate = useNavigate();
-  const [settings, setSettings] = useState(loadStudySettings);
+  // Study manual oynasida Test yo'nalishi tanlangan bo'lsa (state.testAsk), shu bilan boshlaymiz
+  const [settings, setSettings] = useState(() => {
+    const s = loadStudySettings();
+    const ask = location.state?.testAsk;
+    if (!ask || ask === s.testAsk) return s;
+    const next = { ...s, testAsk: ask };
+    save(STUDY_SETTINGS_KEY, next);
+    return next;
+  });
   const [starred] = useState(() => loadStarred(deckId));
   const [popover, setPopover] = useState(false);
   const [allOpen, setAllOpen] = useState(false);
   const [runKey, setRunKey] = useState(0);
-  const [testPicked, setTestPicked] = useState(false);
+  const [testPicked, setTestPicked] = useState(() => !!location.state?.testAsk);
 
   const [deckName, setDeckName] = useState("");
   const { t } = useLang();

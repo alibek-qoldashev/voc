@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { getCards } from "../lib/api";
 import { definitionOnly, withMeaning } from "../lib/utils";
 import { useStudy } from "../lib/study";
@@ -24,8 +24,10 @@ export default function StudyExam() {
   const { t } = useLang();
   const [cards, setCards] = useState(null);
   const [error, setError] = useState("");
-  const [config, setConfig] = useState(null);
-  const [setupOpen, setSetupOpen] = useState(true);
+  // Study manual oynasida sozlangan bo'lsa, imtihon darrov boshlanadi
+  const location = useLocation();
+  const [config, setConfig] = useState(() => location.state?.examConfig ?? null);
+  const [setupOpen, setSetupOpen] = useState(() => !location.state?.examConfig);
   const [run, setRun] = useState(0);
   const modeBack = useModeBack(deckId);
 

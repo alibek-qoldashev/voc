@@ -152,17 +152,17 @@ function ManualModal({ onClose }) {
       {decks && step === "mode" && (
         <>
           {pills}
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid auto-rows-fr gap-3 sm:grid-cols-2">
             {MODES.map((m) => {
               const ok = words >= m.min;
               return (
-                <li key={m.id}>
+                <li key={m.id} className="flex">
                   <button
                     type="button"
                     disabled={!ok}
                     title={ok ? undefined : t("mode.needs", { count: m.min })}
                     onClick={() => navigate(studyPath(picked, m.id))}
-                    className="glass flex w-full items-start gap-3 rounded-2xl p-4 text-left transition-colors hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="glass flex h-full w-full items-start gap-3 rounded-2xl p-4 text-left transition-colors hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <span className={m.color}>
                       <Icon d={m.icon} size={22} />
@@ -181,9 +181,10 @@ function ManualModal({ onClose }) {
           <button
             type="button"
             onClick={() => setStep("pick")}
-            className="mt-5 text-sm text-mist hover:text-white"
+            className="mt-5 inline-flex items-center gap-2 rounded-full border border-leaf/50 bg-leaf/10 px-4 py-2.5 text-sm font-bold text-[#8fe36b] transition-colors hover:bg-leaf/20"
           >
-            ← {t("manual.back")}
+            <Icon d={["M19 12H5", "m12 19-7-7 7-7"]} size={18} />
+            {t("manual.back")}
           </button>
         </>
       )}

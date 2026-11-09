@@ -10,7 +10,7 @@ import {
 } from "../lib/utils";
 import { load, save } from "../lib/storage";
 import { useLang } from "../lib/i18n";
-import { BackBtn, Btn, Modal, Select, Toggle, fieldCls } from "./ui";
+import { BackBtn, Btn, Modal, Select, Toggle, fieldCls, backLinkCls } from "./ui";
 
 // Imtihon: deckdagi Exam rejimi va papkadagi "Study all" uchun umumiy.
 // Foydalanuvchi oynada savollar soni, javob tomoni va savol turlarini o'zi tanlaydi.
@@ -549,7 +549,7 @@ export function ExamRunner({ cards: allCards, config, back, backLabel, onSetting
             <Btn variant="glass" onClick={onSettings}>
               {t("exam.changeSettings")}
             </Btn>
-            <Link to={back} className="text-sm text-mist underline">
+            <Link to={back} className={backLinkCls}>
               {backLabel}
             </Link>
           </div>

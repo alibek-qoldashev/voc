@@ -5,7 +5,7 @@ import { definitionOnly, withMeaning } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack, useModeBack } from "../lib/decks";
-import { ErrorBox, Spinner } from "../components/ui";
+import { ErrorBox, Spinner, backLinkCls } from "../components/ui";
 import {
   EXAM_MAX,
   ExamRunner,
@@ -50,7 +50,7 @@ export default function StudyExam() {
         {meaning === "uzbek" && (
           <p className="mt-1 text-mist">{t("meaning.needsUz", { count: 2 })}</p>
         )}
-        <Link to={back} className="mt-5 inline-block text-leaf underline">
+        <Link to={back} className={`${backLinkCls} mt-5`}>
           {t(backLabel)}
         </Link>
       </div>

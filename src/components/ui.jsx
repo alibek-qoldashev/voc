@@ -200,6 +200,10 @@ export function CardImage({ src, className = 'mb-4 max-h-36 sm:max-h-44' }) {
   return <img src={src} alt="" loading="lazy" className={`max-w-full rounded-2xl object-contain ${className}`} />;
 }
 
+// Yashil chegarali "orqaga" havolasi tugma ko'rinishida (Link uchun)
+export const backLinkCls =
+  "inline-flex items-center gap-2 rounded-full border border-leaf/50 bg-leaf/10 px-5 py-3 text-sm font-bold text-[#8fe36b] transition-colors hover:bg-leaf/20";
+
 // Yashil chegarali "orqaga" tugmasi
 export function BackBtn({ onClick, children, className = "" }) {
   return (

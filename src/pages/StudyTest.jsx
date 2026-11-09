@@ -5,7 +5,7 @@ import { definitionOnly, shuffle, withMeaning } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack, useModeBack } from "../lib/decks";
-import { BackBtn, Btn, ErrorBox, Spinner } from "../components/ui";
+import { BackBtn, Btn, ErrorBox, Spinner, backLinkCls } from "../components/ui";
 
 const QUESTION_LIMIT = 20;
 // To'g'ri javobdan keyin keyingi savolga avtomatik o'tish; xatoda Continue tugmasi chiqadi
@@ -127,7 +127,7 @@ export default function StudyTest() {
         </p>
         <Link
           to={studyBack(deckId).to}
-          className="mt-5 inline-block text-leaf underline"
+          className={`${backLinkCls} mt-5`}
         >
           {t(studyBack(deckId).label)}
         </Link>
@@ -173,7 +173,7 @@ export default function StudyTest() {
             </Btn>
             <Link
               to={studyBack(deckId).to}
-              className="self-center text-sm text-mist underline"
+              className={backLinkCls}
             >
               {t(studyBack(deckId).label)}
             </Link>

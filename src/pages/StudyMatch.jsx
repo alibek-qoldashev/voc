@@ -5,7 +5,7 @@ import { definitionOnly, withMeaning, shuffle } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack } from "../lib/decks";
-import { Btn, ErrorBox, Spinner, btnClass } from "../components/ui";
+import { Btn, ErrorBox, Spinner, btnClass, backLinkCls } from "../components/ui";
 
 const PAIRS = 6;
 
@@ -75,7 +75,7 @@ export default function StudyMatch() {
         </p>
         <Link
           to={studyBack(deckId).to}
-          className="mt-5 inline-block text-leaf underline"
+          className={`${backLinkCls} mt-5`}
         >
           {t(studyBack(deckId).label)}
         </Link>

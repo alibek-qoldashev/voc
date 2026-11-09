@@ -5,7 +5,7 @@ import { definitionOnly, levenshtein, normalize, shuffle } from "../lib/utils";
 import { QUESTION_TYPES, useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
 import { studyBack } from "../lib/decks";
-import { Btn, ErrorBox, Spinner, fieldCls } from "../components/ui";
+import { Btn, ErrorBox, Spinner, fieldCls, backLinkCls } from "../components/ui";
 
 const ROUND_SIZE = 7;
 // Xato topilgan karta raund ichida shuncha savoldan keyin yana chiqadi
@@ -308,7 +308,7 @@ export default function StudyLearn() {
     return (
       <div className="glass rounded-3xl p-8 text-center">
         <p className="text-xl font-bold">{t("learn.noCards")}</p>
-        <Link to={back} className="mt-5 inline-block text-leaf underline">
+        <Link to={back} className={`${backLinkCls} mt-5`}>
           {t(backLabel)}
         </Link>
       </div>
@@ -353,7 +353,7 @@ export default function StudyLearn() {
           </p>
           <div className="mt-8 flex justify-center gap-3">
             <Btn onClick={() => start(cards)}>{t("learn.again")}</Btn>
-            <Link to={back} className="self-center text-sm text-mist underline">
+            <Link to={back} className={backLinkCls}>
               {t(backLabel)}
             </Link>
           </div>

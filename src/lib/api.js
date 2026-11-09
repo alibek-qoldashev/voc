@@ -132,11 +132,18 @@ export const updateCard = (id, f) =>
       definition: (f.definition || "").trim(),
       translation: (f.translation || "").trim(),
       example: (f.example || "").trim(),
+      // Rasmlar faqat berilgan bo'lsa yangilanadi
+      ...("term_image" in f && { term_image: f.term_image || null }),
+      ...("definition_image" in f && { definition_image: f.definition_image || null }),
     })
     .eq("id", id)
     .select()
     .single()
     .then(must);
+
+// Tahrirda kartalar tartibi o'zgarsa
+export const setCardPosition = (id, position) =>
+  supabase.from("cards").update({ position }).eq("id", id).then(must);
 
 export const deleteCard = (id) =>
   supabase.from("cards").delete().eq("id", id).then(must);

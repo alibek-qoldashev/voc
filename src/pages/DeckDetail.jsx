@@ -2,16 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   addCards,
-  deleteCard,
   deleteDeck,
   getCards,
   getDeck,
   updateCard,
 } from "../lib/api";
-import { parseImport, speak, withMeaning } from "../lib/utils";
+import { speak, withMeaning } from "../lib/utils";
 import { getDeckOrigin } from "../lib/storage";
 import CardForm from "../components/CardForm";
 import FlipBoard from "../components/FlipBoard";
+import DeckEditor from "../components/DeckEditor";
 import ItemMenu from "../components/ItemMenu";
 import { MODES } from "../lib/modes";
 import {
@@ -19,7 +19,6 @@ import {
   Btn,
   CardImage,
   ErrorBox,
-  Field,
   Icon,
   Spinner,
   SpeakIcon,
@@ -98,110 +97,6 @@ function ModeTiles({ deckId, count, ready, uzCount }) {
   );
 }
 
-// Tahrir rejimidagi bitta karta
-function EditRow({ card, selected, onToggle, onSave, onDelete }) {
-  const [editing, setEditing] = useState(false);
-  const [f, setF] = useState(card);
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
-  const { t } = useLang();
-
-  if (editing) {
-    return (
-      <li className="glass rounded-2xl p-5">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={t("card.term")}>
-            <input
-              autoFocus
-              className={fieldCls}
-              value={f.term}
-              onChange={set("term")}
-            />
-          </Field>
-          <Field label={t("card.translation")}>
-            <input
-              className={fieldCls}
-              value={f.translation || ""}
-              onChange={set("translation")}
-            />
-          </Field>
-          <Field label={t("card.definition")}>
-            <input
-              className={fieldCls}
-              value={f.definition || ""}
-              onChange={set("definition")}
-            />
-          </Field>
-          <Field label={t("card.example")}>
-            <input
-              className={fieldCls}
-              value={f.example || ""}
-              onChange={set("example")}
-            />
-          </Field>
-        </div>
-        <div className="mt-4 flex gap-3">
-          <Btn
-            onClick={async () => {
-              await onSave(f);
-              setEditing(false);
-            }}
-            disabled={!f.term.trim()}
-          >
-            {t("common.save")}
-          </Btn>
-          <Btn
-            variant="glass"
-            onClick={() => {
-              setF(card);
-              setEditing(false);
-            }}
-          >
-            {t("common.cancel")}
-          </Btn>
-        </div>
-      </li>
-    );
-  }
-
-  return (
-    <li className={`glass rounded-2xl p-5 ${selected ? "border-leaf/60" : ""}`}>
-      <div className="flex items-start gap-4">
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={onToggle}
-          aria-label={t("deck.select", { term: card.term })}
-          className="mt-1.5 h-5 w-5 shrink-0 accent-[#55b435]"
-        />
-        <div className="min-w-0 flex-1">
-          <p className="text-lg font-bold">{card.term}</p>
-          {card.translation && (
-            <p className="text-sm font-semibold text-[#8fe36b]">
-              {card.translation}
-            </p>
-          )}
-          {card.definition && <p className="mt-1 text-sm">{card.definition}</p>}
-          {card.example && (
-            <p className="mt-1 text-sm italic text-mist">{card.example}</p>
-          )}
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <Btn
-            variant="glass"
-            className="!px-4 !py-1.5"
-            onClick={() => setEditing(true)}
-          >
-            {t("common.edit")}
-          </Btn>
-          <Btn variant="danger" className="!px-4 !py-1.5" onClick={onDelete}>
-            {t("common.delete")}
-          </Btn>
-        </div>
-      </div>
-    </li>
-  );
-}
-
 export default function DeckDetail() {
   const { deckId } = useParams();
   const navigate = useNavigate();
@@ -212,16 +107,6 @@ export default function DeckDetail() {
   const [searchParams] = useSearchParams();
   // Papka sahifasidagi "Edit" -> ?edit=1 bilan to'g'ridan-to'g'ri tahrir rejimida ochiladi
   const [editMode, setEditMode] = useState(searchParams.get("edit") === "1");
-  const [selected, setSelected] = useState(() => new Set());
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState({
-    term: "",
-    translation: "",
-    definition: "",
-    example: "",
-  });
-  const [bulk, setBulk] = useState("");
-  const [bulkOpen, setBulkOpen] = useState(false);
   const [quickAdd, setQuickAdd] = useState(false);
   const [notice, setNotice] = useState("");
   const { t } = useLang();
@@ -253,47 +138,24 @@ export default function DeckDetail() {
   if (error && !deck) return <ErrorBox>{error}</ErrorBox>;
   if (!deck) return <Spinner />;
 
+  // Tahrirlash: alohida sahifa ko'rinishi (Back, Done, nomi, tavsifi, kartalar)
+  if (editMode)
+    return (
+      <DeckEditor
+        deck={deck}
+        cards={cards}
+        onDone={(d, cs) => {
+          setDeck(d);
+          setCards(cs);
+          setEditMode(false);
+        }}
+        onCancel={() => setEditMode(false)}
+      />
+    );
+
   const readyCount = cards.filter(
     (c) => c.srs_state === "new" || new Date(c.due) <= new Date(),
   ).length;
-
-  const toggle = (id) =>
-    setSelected((s) => {
-      const next = new Set(s);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-
-  const removeOne = async (id, term) => {
-    if (!window.confirm(t("deck.deleteCard", { term }))) return;
-    try {
-      await deleteCard(id);
-      setCards((cs) => cs.filter((c) => c.id !== id));
-      setSelected((s) => {
-        const n = new Set(s);
-        n.delete(id);
-        return n;
-      });
-    } catch (e) {
-      setError(e.message);
-    }
-  };
-
-  const removeSelected = async () => {
-    if (
-      !window.confirm(
-        t("deck.deleteSelected", { count: selected.size }),
-      )
-    )
-      return;
-    try {
-      await Promise.all([...selected].map((id) => deleteCard(id)));
-      setCards((cs) => cs.filter((c) => !selected.has(c.id)));
-      setSelected(new Set());
-    } catch (e) {
-      setError(e.message);
-    }
-  };
 
   const saveCard = async (f) => {
     try {
@@ -304,22 +166,6 @@ export default function DeckDetail() {
     }
   };
 
-  const addOne = async (e) => {
-    e.preventDefault();
-    if (
-      !draft.term.trim() ||
-      (!draft.definition.trim() && !draft.translation.trim())
-    )
-      return;
-    try {
-      const [row] = await addCards(deckId, [draft]);
-      setCards((cs) => [...cs, row]);
-      setDraft({ term: "", translation: "", definition: "", example: "" });
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   // Pastdagi "Add card" formasidan
   const addFromForm = async (f) => {
     const [row] = await addCards(deckId, [f]);
@@ -327,24 +173,8 @@ export default function DeckDetail() {
     setQuickAdd(false);
   };
 
-  const addBulk = async () => {
-    const parsed = parseImport(bulk);
-    if (!parsed.length)
-      return setError(t("import.lineError"));
-    try {
-      const rows = await addCards(deckId, parsed);
-      setCards((cs) => [...cs, ...rows]);
-      setBulk("");
-      setBulkOpen(false);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   const toggleEdit = () => {
     setEditMode((v) => !v);
-    setSelected(new Set());
-    setAdding(false);
     setQuickAdd(false);
   };
 
@@ -379,9 +209,6 @@ export default function DeckDetail() {
     }
   };
 
-  const setDraftField = (k) => (e) =>
-    setDraft({ ...draft, [k]: e.target.value });
-
   return (
     <div >
       {/* Tepa: chapda Back tugmasi, o'rtada nomi va so'zlar soni, o'ngda menyu */}
@@ -404,9 +231,6 @@ export default function DeckDetail() {
           </p>
         </div>
         <div className="justify-self-end">
-        {editMode ? (
-          <Btn onClick={toggleEdit}>{t("common.done")}</Btn>
-        ) : (
           <ItemMenu
             label={t("common.optionsFor", { name: deck.name })}
             buttonClassName="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10"
@@ -416,7 +240,6 @@ export default function DeckDetail() {
               { label: t("common.delete"), onClick: removeDeck, danger: true },
             ]}
           />
-        )}
         </div>
       </div>
 
@@ -428,7 +251,7 @@ export default function DeckDetail() {
 
       <ErrorBox>{error}</ErrorBox>
 
-      {cards.length > 0 && !editMode && (
+      {cards.length > 0 && (
         <div className="mb-10">
           <ModeTiles
             deckId={deckId}
@@ -438,120 +261,6 @@ export default function DeckDetail() {
           />
           <FlipBoard deckId={deckId} cards={cards} onSave={saveCard} />
         </div>
-      )}
-
-      {/* Tahrir paneli */}
-      {editMode && (
-        <section className="glass mb-6 rounded-3xl p-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <Btn onClick={() => setAdding((v) => !v)}>
-              {adding ? t("common.close") : t("deck.addCard")}
-            </Btn>
-            <Btn variant="glass" onClick={() => setBulkOpen((v) => !v)}>
-              {bulkOpen ? t("import.close") : t("import.open")}
-            </Btn>
-            <Btn
-              variant="danger"
-              disabled={selected.size === 0}
-              onClick={removeSelected}
-            >
-              {t("deck.deleteSelectedBtn", { n: selected.size })}
-            </Btn>
-            {cards.length > 0 && (
-              <button
-                type="button"
-                onClick={() =>
-                  setSelected((s) =>
-                    s.size === cards.length
-                      ? new Set()
-                      : new Set(cards.map((c) => c.id)),
-                  )
-                }
-                className="text-sm text-mist underline hover:text-leaf"
-              >
-                {selected.size === cards.length
-                  ? t("deck.clearSelection")
-                  : t("deck.selectAll")}
-              </button>
-            )}
-          </div>
-
-          {adding && (
-            <form
-              onSubmit={addOne}
-              className="mt-5 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-2"
-            >
-              <Field label={t("card.term")}>
-                <input
-                  autoFocus
-                  className={fieldCls}
-                  value={draft.term}
-                  onChange={setDraftField("term")}
-                  placeholder="mitigate"
-                />
-              </Field>
-              <Field label={t("card.translationUz")}>
-                <input
-                  className={fieldCls}
-                  value={draft.translation}
-                  onChange={setDraftField("translation")}
-                  placeholder="yengillashtirmoq"
-                />
-              </Field>
-              <Field label={t("card.definition")}>
-                <input
-                  className={fieldCls}
-                  value={draft.definition}
-                  onChange={setDraftField("definition")}
-                  placeholder="to make something less severe"
-                />
-              </Field>
-              <Field label={t("card.example")}>
-                <input
-                  className={fieldCls}
-                  value={draft.example}
-                  onChange={setDraftField("example")}
-                  placeholder="Trees help mitigate pollution."
-                />
-              </Field>
-              <div className="sm:col-span-2">
-                <Btn
-                  type="submit"
-                  disabled={
-                    !draft.term.trim() ||
-                    (!draft.definition.trim() && !draft.translation.trim())
-                  }
-                >
-                  {t("deck.addCard")}
-                </Btn>
-              </div>
-            </form>
-          )}
-
-          {bulkOpen && (
-            <div className="mt-5 border-t border-white/10 pt-5">
-              <p className="text-sm text-mist">
-                {t("import.perLine")}{" "}
-                <code className="rounded bg-white/10 px-1">
-                  term ; definition ; translation ; example
-                </code>
-              </p>
-              <textarea
-                autoFocus
-                className={`${fieldCls} mt-3 h-36 font-mono`}
-                value={bulk}
-                onChange={(e) => setBulk(e.target.value)}
-                aria-label={t("import.open")}
-                placeholder={"mitigate ; to make something less severe"}
-              />
-              <div className="mt-3">
-                <Btn onClick={addBulk} disabled={!bulk.trim()}>
-                  {t("deck.addAll")}
-                </Btn>
-              </div>
-            </div>
-          )}
-        </section>
       )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -576,17 +285,7 @@ export default function DeckDetail() {
         </div>
       ) : (
         <ul className="space-y-3">
-          {shown.map((c) =>
-            editMode ? (
-              <EditRow
-                key={c.id}
-                card={c}
-                selected={selected.has(c.id)}
-                onToggle={() => toggle(c.id)}
-                onSave={saveCard}
-                onDelete={() => removeOne(c.id, c.term)}
-              />
-            ) : (
+          {shown.map((c) => (
               <li key={c.id} className="glass rounded-2xl p-5">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
@@ -632,8 +331,7 @@ export default function DeckDetail() {
                   {stateBadge(c, t)}
                 </div>
               </li>
-            ),
-          )}
+          ))}
         </ul>
       )}
 
@@ -642,8 +340,7 @@ export default function DeckDetail() {
       )}
 
       {/* Pastdagi Add card */}
-      {!editMode &&
-        (quickAdd ? (
+      {quickAdd ? (
           <section className="glass mt-6 rounded-3xl p-6">
             <h2 className="mb-4 text-lg font-bold">{t("deck.newCard")}</h2>
             <CardForm
@@ -660,7 +357,7 @@ export default function DeckDetail() {
           >
             + {t("deck.addCard")}
           </Btn>
-        ))}
+        )}
     </div>
   );
 }

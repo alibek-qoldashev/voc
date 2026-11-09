@@ -4,15 +4,15 @@ import { getCards, logPractice } from "../lib/api";
 import { definitionOnly, shuffle, withMeaning } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
-import { studyBack } from "../lib/decks";
-import { Btn, ErrorBox, Spinner } from "../components/ui";
+import { studyBack, useModeBack } from "../lib/decks";
+import { BackBtn, Btn, ErrorBox, Spinner } from "../components/ui";
 
 const QUESTION_LIMIT = 20;
 // To'g'ri javobdan keyin keyingi savolga avtomatik o'tish; xatoda Continue tugmasi chiqadi
 const NEXT_RIGHT_MS = 800;
 
 // Test boshida: savolda ta'rif (variantlar so'zlar) yoki so'z (variantlar ta'riflar)
-function DirectionPicker({ onPick, uz }) {
+function DirectionPicker({ onPick, onBack, uz }) {
   const { t } = useLang();
   // O'zbekcha tanlanganda yozuvlarda "ta'rif" o'rniga "o'zbekcha"
   const sfx = uz ? "Uz" : "";
@@ -39,6 +39,9 @@ function DirectionPicker({ onPick, uz }) {
             </button>
           ))}
         </div>
+        <BackBtn onClick={onBack} className="mt-6">
+          {t("study.backModes")}
+        </BackBtn>
       </div>
     </div>
   );
@@ -57,6 +60,7 @@ export default function StudyTest() {
     say,
   } = useStudy();
   const uz = meaning === "uzbek";
+  const modeBack = useModeBack(deckId);
   // Savolda ko'rsatiladigan tomon va variantlardagi tomon
   const askDef = settings.testAsk !== "term";
   const askText = (c) => (askDef ? definitionOnly(c) : c.term);
@@ -135,6 +139,7 @@ export default function StudyTest() {
     return (
       <DirectionPicker
         uz={uz}
+        onBack={modeBack}
         onPick={(ask) => {
           setTestPicked(true);
           if (ask !== settings.testAsk) update({ testAsk: ask });

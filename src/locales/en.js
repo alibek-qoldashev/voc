@@ -55,6 +55,7 @@ export default {
   "common.continue": "Continue",
   "theme.toLight": "Switch to light mode",
   "theme.toDark": "Switch to dark mode",
+  "study.backModes": "Choose another mode",
   "common.back": "Back",
   "uzbek.none": "No Uzbek translations in this deck",
   "translator.nav": "Translate",

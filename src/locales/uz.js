@@ -55,6 +55,7 @@ export default {
   "common.continue": "Davom etish",
   "theme.toLight": "Yorug' rejimga o'tish",
   "theme.toDark": "Qorong'i rejimga o'tish",
+  "study.backModes": "Boshqa usulni tanlash",
   "common.back": "Orqaga",
   "uzbek.none": "Bu deckda o'zbekcha tarjima yo'q",
   "translator.nav": "Tarjima",

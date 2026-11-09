@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { getCards } from "../lib/api";
-import { studyBack } from "../lib/decks";
+import { useModeBack } from "../lib/decks";
 import { MODES, UZBEK_MODES } from "../lib/modes";
 import { withMeaning } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
-import { ErrorBox, Icon, Spinner } from "../components/ui";
+import { BackBtn, ErrorBox, Icon, Spinner } from "../components/ui";
 
 // Tarjima rejimi: so'z o'zbekcha tarjimasi (ta'rifdagi chiziqchadan keyingi qism) bilan.
 // Shu yerda Anki, Test, Exam yoki Match tanlanadi
@@ -16,6 +16,8 @@ export default function StudyUzbek() {
   const { t } = useLang();
   const [count, setCount] = useState(null);
   const [error, setError] = useState("");
+  const location = useLocation();
+  const modeBack = useModeBack(deckId);
 
   useEffect(() => {
     getCards(deckId)
@@ -26,7 +28,6 @@ export default function StudyUzbek() {
   if (error) return <ErrorBox>{error}</ErrorBox>;
   if (count === null) return <Spinner />;
 
-  const back = studyBack(deckId);
   const modes = UZBEK_MODES.map((id) => MODES.find((m) => m.id === id));
 
   return (
@@ -59,6 +60,7 @@ export default function StudyUzbek() {
               {ok ? (
                 <Link
                   to={`/flashcards/study/${deckId}/${m.id}?m=uz`}
+                  state={location.state}
                   className={`${cls} transition-colors hover:border-white/40`}
                 >
                   {inner}
@@ -70,9 +72,9 @@ export default function StudyUzbek() {
           );
         })}
       </ul>
-      <Link to={back.to} className="mt-6 inline-block text-sm text-mist hover:text-white">
-        ← {t(back.label)}
-      </Link>
+      <BackBtn onClick={modeBack} className="mt-6">
+        {t("study.backModes")}
+      </BackBtn>
     </div>
   );
 }

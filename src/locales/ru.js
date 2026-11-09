@@ -55,6 +55,7 @@ export default {
   "common.continue": "Продолжить",
   "theme.toLight": "Светлая тема",
   "theme.toDark": "Тёмная тема",
+  "study.backModes": "Выбрать другой режим",
   "common.back": "Назад",
   "uzbek.none": "В этом наборе нет узбекских переводов",
   "translator.nav": "Перевод",

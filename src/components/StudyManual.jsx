@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getDecksWithStats } from "../lib/api";
 import { studyPath } from "../lib/decks";
 import { MODES } from "../lib/modes";
@@ -13,27 +13,37 @@ const CLOSE = ["M18 6 6 18", "m6 6 12 12"];
 // "Study manual": bir nechta deckni qo'lda tanlab, bitta o'quv sessiyasiga birlashtirish.
 // Tanlov saqlanmaydi — har safar yangidan tanlanadi
 export default function StudyManual() {
-  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  // O'quv sahifasidagi "Boshqa usulni tanlash" shu oynani usullar bosqichida qayta ochadi
+  const [reopen] = useState(() => location.state?.reopenManual ?? null);
+  const [open, setOpen] = useState(!!reopen);
   const { t } = useLang();
+  useEffect(() => {
+    if (reopen) navigate(location.pathname, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <>
       <Btn variant="glass" className="h-[46px]" onClick={() => setOpen(true)}>
         <Icon d={["M4 6h16", "M4 12h10", "M4 18h6", "M17 15l3 3-3 3"]} size={18} />
         {t("manual.button")}
       </Btn>
-      {open && <ManualModal onClose={() => setOpen(false)} />}
+      {open && <ManualModal initialPicked={reopen} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function ManualModal({ onClose }) {
+function ManualModal({ onClose, initialPicked }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLang();
   const [decks, setDecks] = useState(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [picked, setPicked] = useState([]); // tanlangan deck id lari, tanlash tartibida
-  const [step, setStep] = useState("pick"); // pick -> mode
+  // tanlangan deck id lari, tanlash tartibida
+  const [picked, setPicked] = useState(() => initialPicked ?? []);
+  const [step, setStep] = useState(initialPicked ? "mode" : "pick"); // pick -> mode
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -161,7 +171,11 @@ function ManualModal({ onClose }) {
                     type="button"
                     disabled={!ok}
                     title={ok ? undefined : t("mode.needs", { count: m.min })}
-                    onClick={() => navigate(studyPath(picked, m.id))}
+                    onClick={() =>
+                      navigate(studyPath(picked, m.id), {
+                        state: { manual: { from: location.pathname, picked } },
+                      })
+                    }
                     className="glass flex h-full w-full items-start gap-3 rounded-2xl p-4 text-left transition-colors hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <span className={m.color}>

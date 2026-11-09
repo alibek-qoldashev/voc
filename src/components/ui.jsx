@@ -199,3 +199,17 @@ export function CardImage({ src, className = 'mb-4 max-h-36 sm:max-h-44' }) {
   if (!src) return null;
   return <img src={src} alt="" loading="lazy" className={`max-w-full rounded-2xl object-contain ${className}`} />;
 }
+
+// Yashil chegarali "orqaga" tugmasi
+export function BackBtn({ onClick, children, className = "" }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded-full border border-leaf/50 bg-leaf/10 px-4 py-2.5 text-sm font-bold text-[#8fe36b] transition-colors hover:bg-leaf/20 ${className}`}
+    >
+      <Icon d={["M19 12H5", "m12 19-7-7 7-7"]} size={18} />
+      {children}
+    </button>
+  );
+}

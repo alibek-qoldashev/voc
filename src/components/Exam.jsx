@@ -10,7 +10,7 @@ import {
 } from "../lib/utils";
 import { load, save } from "../lib/storage";
 import { useLang } from "../lib/i18n";
-import { Btn, Modal, Select, Toggle, fieldCls } from "./ui";
+import { BackBtn, Btn, Modal, Select, Toggle, fieldCls } from "./ui";
 
 // Imtihon: deckdagi Exam rejimi va papkadagi "Study all" uchun umumiy.
 // Foydalanuvchi oynada savollar soni, javob tomoni va savol turlarini o'zi tanlaydi.
@@ -124,7 +124,7 @@ const askOf = (card, d) => (d === "term" ? answerOf(card) : card.term);
 const replyOf = (card, d) => (d === "term" ? card.term : answerOf(card));
 
 // Imtihon sozlamalari oynasi. meaning — "uzbek" bo'lsa (Tarjima rejimi) javob o'zbekcha tarjima
-export function ExamSetup({ max, meaning = "definition", initial, onStart, onClose }) {
+export function ExamSetup({ max, meaning = "definition", initial, onStart, onClose, onBack }) {
   const { t } = useLang();
   const [count, setCount] = useState(String(initial.count));
   const [answerWith, setAnswerWith] = useState(initial.answerWith);
@@ -202,7 +202,12 @@ export function ExamSetup({ max, meaning = "definition", initial, onStart, onClo
           <p className="mt-4 text-sm text-rose">{t("exam.pickType")}</p>
         )}
 
-        <div className="mt-8 flex justify-end">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+          {onBack ? (
+            <BackBtn onClick={onBack}>{t("study.backModes")}</BackBtn>
+          ) : (
+            <span />
+          )}
           <Btn type="submit" disabled={!anyType || !enough}>
             {t("exam.start")}
           </Btn>

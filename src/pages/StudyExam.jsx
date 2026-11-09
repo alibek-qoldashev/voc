@@ -4,7 +4,7 @@ import { getCards } from "../lib/api";
 import { definitionOnly, withMeaning } from "../lib/utils";
 import { useStudy } from "../lib/study";
 import { useLang } from "../lib/i18n";
-import { studyBack } from "../lib/decks";
+import { studyBack, useModeBack } from "../lib/decks";
 import { ErrorBox, Spinner } from "../components/ui";
 import {
   EXAM_MAX,
@@ -27,6 +27,7 @@ export default function StudyExam() {
   const [config, setConfig] = useState(null);
   const [setupOpen, setSetupOpen] = useState(true);
   const [run, setRun] = useState(0);
+  const modeBack = useModeBack(deckId);
 
   useEffect(() => {
     getCards(deckId)
@@ -79,6 +80,7 @@ export default function StudyExam() {
             setRun((r) => r + 1);
           }}
           onClose={() => (config ? setSetupOpen(false) : navigate(back))}
+          onBack={modeBack}
         />
       )}
     </>

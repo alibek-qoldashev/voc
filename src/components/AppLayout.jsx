@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 import Footer from "./Footer";
 import Translator, { TRANSLATE_ICON } from "./Translator";
+import OfflineBanner from "./OfflineBanner";
 import { Icon } from "./ui";
 import { useLang } from "../lib/i18n";
 
@@ -292,6 +293,7 @@ export default function AppLayout() {
           studying ? "md:overflow-y-auto md:pb-2" : "md:pb-20"
         }`}
       >
+        <OfflineBanner />
         <Outlet />
         {!studying && <Footer className="mt-16" />}
       </main>

@@ -1,7 +1,13 @@
 import { supabase } from "./supabase";
 import { dayKey, WEEKDAYS } from "./utils";
 import { LEARN_AGAIN_WINDOW } from "./srs";
-import { whereDeck } from "./decks";
+import { deckIdsOf, isMix, whereDeck } from "./decks";
+import {
+  enqueue,
+  isNetworkError,
+  patchSnapshot,
+  withOffline,
+} from "./offline";
 
 const must = ({ data, error }) => {
   if (error) throw error;
@@ -39,8 +45,30 @@ const srsToRow = (s, meaning) => {
   };
 };
 
+// ---- Oflayn: snapshotdan hisoblash ---------------------------------------
+const inDeck = (deckId) => {
+  if (deckId === "all") return () => true;
+  if (isMix(deckId)) {
+    const ids = new Set(deckIdsOf(deckId));
+    return (c) => ids.has(c.deck_id);
+  }
+  return (c) => c.deck_id === deckId;
+};
+const byPosition = (a, b) =>
+  a.deck_id.localeCompare(b.deck_id) ||
+  (a.position ?? 0) - (b.position ?? 0) ||
+  new Date(a.created_at) - new Date(b.created_at);
+const byPinnedNewest = (a, b) =>
+  Number(b.pinned || 0) - Number(a.pinned || 0) ||
+  new Date(b.created_at) - new Date(a.created_at);
+const startOfToday = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
 // ---- Decklar -----------------------------------------------------------
-export async function getDecksWithStats() {
+async function getDecksWithStatsOnline() {
   const [decks, stats] = await Promise.all([
     supabase
       .from("decks")
@@ -60,6 +88,22 @@ export async function getDecksWithStats() {
   }));
 }
 
+export const getDecksWithStats = withOffline(getDecksWithStatsOnline, (s) => {
+  const now = Date.now();
+  const stats = {};
+  s.cards.forEach((c) => {
+    const st = (stats[c.deck_id] ??= { total: 0, newCount: 0, learnCount: 0, dueCount: 0 });
+    st.total++;
+    if (c.srs_state === "new") st.newCount++;
+    else if (c.srs_state === "learning") st.learnCount++;
+    else if (new Date(c.due).getTime() <= now) st.dueCount++;
+  });
+  return [...s.decks].sort(byPinnedNewest).map((d) => ({
+    ...d,
+    ...(stats[d.id] ?? { total: 0, newCount: 0, learnCount: 0, dueCount: 0 }),
+  }));
+});
+
 export const createDeck = (name, description = "", folderId = null) =>
   supabase
     .from("decks")
@@ -78,8 +122,14 @@ export const renameDeck = (id, name) =>
 export const deleteDeck = (id) =>
   supabase.from("decks").delete().eq("id", id).then(must);
 
-export const getDeck = (id) =>
-  supabase.from("decks").select("*").eq("id", id).single().then(must);
+export const getDeck = withOffline(
+  (id) => supabase.from("decks").select("*").eq("id", id).single().then(must),
+  (s, id) => {
+    const d = s.decks.find((x) => x.id === id);
+    if (!d) throw new Error("offline-missing");
+    return d;
+  },
+);
 
 export const updateDeck = (id, fields) =>
   supabase
@@ -95,12 +145,15 @@ export const updateDeck = (id, fields) =>
 
 // ---- Kartalar ----------------------------------------------------------
 // deckId: bitta deck yoki vergul bilan bir nechta (lib/decks.js)
-export const getCards = (deckId) =>
-  whereDeck(supabase.from("cards").select("*"), deckId)
-    .order("deck_id", { ascending: true })
-    .order("position", { ascending: true })
-    .order("created_at", { ascending: true })
-    .then(must);
+export const getCards = withOffline(
+  (deckId) =>
+    whereDeck(supabase.from("cards").select("*"), deckId)
+      .order("deck_id", { ascending: true })
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: true })
+      .then(must),
+  (s, deckId) => s.cards.filter(inDeck(deckId)).sort(byPosition),
+);
 
 // position: hozirgi vaqt + tartib raqami, shunda yangi kartalar oxiriga,
 // bir partiyadagilar esa berilgan tartibda tushadi
@@ -153,7 +206,7 @@ export const deleteCard = (id) =>
 // keep: kartani shu rejimda o'qish mumkinmi (masalan, o'zbekcha tarjimasi bormi)
 
 // Bugun yana nechta YANGI karta o'rganish mumkin (kunlik limit - bugun ko'rilgan yangilar)
-export async function getNewLeft(meaning = "definition") {
+async function getNewLeftOnline(meaning = "definition") {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const [profile, logs] = await Promise.all([
@@ -169,11 +222,22 @@ export async function getNewLeft(meaning = "definition") {
   return Math.max(0, (profile?.new_per_day ?? 20) - (logs.count ?? 0));
 }
 
+export const getNewLeft = withOffline(getNewLeftOnline, (s, meaning = "definition") => {
+  const start = startOfToday().getTime();
+  const used = s.logs.filter(
+    (l) =>
+      l.was_new &&
+      (l.meaning ?? "definition") === meaning &&
+      new Date(l.reviewed_at).getTime() >= start,
+  ).length;
+  return Math.max(0, (s.profile?.new_per_day ?? 20) - used);
+});
+
 const always = () => true;
 
 // deckId: 'all' yoki deck id.
 // extraNew: kunlik limit tugagan bo'lsa ham shuncha yangi kartani qo'shib beradi ("Hozir o'qish")
-export async function getStudyQueue(
+async function getStudyQueueOnline(
   deckId,
   { extraNew = 0, meaning = "definition", keep = always } = {},
 ) {
@@ -208,8 +272,27 @@ export async function getStudyQueue(
   }));
 }
 
+export const getStudyQueue = withOffline(
+  getStudyQueueOnline,
+  async (s, deckId, { extraNew = 0, meaning = "definition", keep = always } = {}) => {
+    const p = pre(meaning);
+    const left = extraNew || (await getNewLeft(meaning));
+    const until = Date.now() + LEARN_AGAIN_WINDOW;
+    const mine = s.cards.filter(inDeck(deckId)).filter(keep);
+    const due = mine
+      .filter((c) => c[`${p}srs_state`] !== "new" && new Date(c[`${p}due`]).getTime() <= until)
+      .sort((a, b) => new Date(a[`${p}due`]) - new Date(b[`${p}due`]))
+      .slice(0, 200);
+    const fresh = mine
+      .filter((c) => c[`${p}srs_state`] === "new")
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      .slice(0, left);
+    return [...due, ...fresh].map((card) => ({ card, srs: srsFromRow(card, meaning) }));
+  },
+);
+
 // Deckdagi (yoki hamma decklardagi) hali o'rganilmagan yangi kartalar soni
-export async function countNewCards(deckId, { meaning = "definition", keep } = {}) {
+async function countNewCardsOnline(deckId, { meaning = "definition", keep } = {}) {
   const p = pre(meaning);
   if (keep) {
     let q = supabase
@@ -230,7 +313,31 @@ export async function countNewCards(deckId, { meaning = "definition", keep } = {
   return count ?? 0;
 }
 
+export const countNewCards = withOffline(
+  countNewCardsOnline,
+  (s, deckId, { meaning = "definition", keep = always } = {}) =>
+    s.cards
+      .filter(inDeck(deckId))
+      .filter((c) => c[`${pre(meaning)}srs_state`] === "new")
+      .filter(keep).length,
+);
+
+// Anki bahosi. Internet bo'lmasa navbatga yoziladi va qurilmadagi nusxa darrov yangilanadi
 export async function gradeCard({ card, srs, rating, wasNew, meaning = "definition" }) {
+  const cardPatch = srsToRow(srs, meaning);
+  const log = { card_id: card.id, deck_id: card.deck_id, rating, was_new: wasNew, meaning };
+  patchSnapshot({ cardId: card.id, cardPatch, deckId: card.deck_id, log });
+  const queue = () => enqueue({ kind: "grade", cardId: card.id, deckId: card.deck_id, cardPatch, log });
+  if (!navigator.onLine) return queue();
+  try {
+    await gradeCardOnline({ card, srs, rating, wasNew, meaning });
+  } catch (e) {
+    if (isNetworkError(e)) return queue();
+    throw e;
+  }
+}
+
+async function gradeCardOnline({ card, srs, rating, wasNew, meaning }) {
   const results = await Promise.all([
     supabase.from("cards").update(srsToRow(srs, meaning)).eq("id", card.id),
     supabase.from("review_logs").insert({
@@ -252,19 +359,20 @@ export async function gradeCard({ card, srs, rating, wasNew, meaning = "definiti
 // Match / Test / Writing uchun: javobni tarixga yozadi (SRS jadvalini o'zgartirmaydi).
 // Haqiqiy Promise qaytaradi: Supabase so'rov obyektida .catch yo'q, chaqiruvchilar esa
 // logPractice(...).catch(...) deb ishlatadi
-export const logPractice = (deckId, cardId, correct) =>
-  supabase
-    .from("review_logs")
-    .insert({
-      card_id: cardId,
-      deck_id: deckId,
-      rating: correct ? 2 : 0,
-      was_new: false,
-    })
-    .then(must);
+export async function logPractice(deckId, cardId, correct) {
+  const log = { card_id: cardId, deck_id: deckId, rating: correct ? 2 : 0, was_new: false };
+  patchSnapshot({ log });
+  if (!navigator.onLine) return enqueue({ kind: "log", log });
+  try {
+    await supabase.from("review_logs").insert(log).then(must);
+  } catch (e) {
+    if (isNetworkError(e)) return enqueue({ kind: "log", log });
+    throw e;
+  }
+}
 
 // ---- Papkalar ----------------------------------------------------------
-export async function getFolders() {
+async function getFoldersOnline() {
   const [folders, decks] = await Promise.all([
     supabase
       .from("folders")
@@ -281,8 +389,24 @@ export async function getFolders() {
   return folders.map((f) => ({ ...f, deckCount: counts[f.id] || 0 }));
 }
 
-export const getFolder = (id) =>
-  supabase.from("folders").select("*").eq("id", id).single().then(must);
+export const getFolders = withOffline(getFoldersOnline, (s) => {
+  const counts = {};
+  s.decks.forEach((d) => {
+    if (d.folder_id) counts[d.folder_id] = (counts[d.folder_id] || 0) + 1;
+  });
+  return [...s.folders]
+    .sort(byPinnedNewest)
+    .map((f) => ({ ...f, deckCount: counts[f.id] || 0 }));
+});
+
+export const getFolder = withOffline(
+  (id) => supabase.from("folders").select("*").eq("id", id).single().then(must),
+  (s, id) => {
+    const f = s.folders.find((x) => x.id === id);
+    if (!f) throw new Error("offline-missing");
+    return f;
+  },
+);
 
 export const createFolder = (name, description = "") =>
   supabase
@@ -316,6 +440,19 @@ export const setFolderPinned = (id, pinned) =>
 export const setDeckPinned = (id, pinned) =>
   supabase.from("decks").update({ pinned }).eq("id", id).then(must);
 
+// Oxirgi kunlardagi takrorlashlar (Home'dagi grafik va streak)
+const getRecentLogs = withOffline(
+  (since) =>
+    supabase
+      .from("review_logs")
+      .select("reviewed_at")
+      .gte("reviewed_at", since.toISOString())
+      .order("reviewed_at", { ascending: false })
+      .limit(1000)
+      .then(must),
+  (s, since) => s.logs.filter((l) => new Date(l.reviewed_at) >= since),
+);
+
 // ---- Home sahifa ---------------------------------------------------------
 export async function getHomeData() {
   const since = new Date();
@@ -326,13 +463,7 @@ export async function getHomeData() {
     getDecksWithStats(),
     getNewLeft(),
     getFolders(),
-    supabase
-      .from("review_logs")
-      .select("reviewed_at")
-      .gte("reviewed_at", since.toISOString())
-      .order("reviewed_at", { ascending: false })
-      .limit(1000)
-      .then(must),
+    getRecentLogs(since),
   ]);
 
   const dueTotal = decks.reduce((s, d) => s + d.dueCount, 0);
@@ -379,8 +510,10 @@ export async function getHomeData() {
 }
 
 // ---- Profil ----------------------------------------------------------
-export const getProfile = () =>
-  supabase.from("profiles").select("*").single().then(must);
+export const getProfile = withOffline(
+  () => supabase.from("profiles").select("*").single().then(must),
+  (s) => s.profile,
+);
 
 export async function updateNewPerDay(n) {
   const { data: auth } = await supabase.auth.getUser();
@@ -500,7 +633,7 @@ export async function translateWord(text, from) {
 }
 
 // Papka ichidagi barcha decklarning kartalari (papka imtihoni uchun)
-export async function getFolderCards(folderId) {
+async function getFolderCardsOnline(folderId) {
   const decks = await supabase
     .from("decks")
     .select("id")
@@ -516,3 +649,8 @@ export async function getFolderCards(folderId) {
     )
     .then(must);
 }
+
+export const getFolderCards = withOffline(getFolderCardsOnline, (s, folderId) => {
+  const ids = new Set(s.decks.filter((d) => d.folder_id === folderId).map((d) => d.id));
+  return s.cards.filter((c) => ids.has(c.deck_id));
+});

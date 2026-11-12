@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { deleteAccount, getProfile, removeAvatar, updateNewPerDay, uploadAvatar } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { Btn, ErrorBox, Field, PageTitle, Spinner, fieldCls } from '../components/ui';
+import InstallApp from '../components/InstallApp';
 import { formatDate, useLang } from '../lib/i18n';
 
 const fmtDate = (v, lang) => (v ? formatDate(lang, new Date(v)) : '—');
@@ -181,6 +182,8 @@ export default function Profile() {
           <Btn onClick={saveLimit} disabled={busy === 'limit'}>{busy === 'limit' ? t('common.saving') : t('common.save')}</Btn>
         </div>
       </section>
+
+      <InstallApp />
 
       {/* Account */}
       <section className="glass rounded-3xl p-6 sm:p-8">

@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import CreateMenu from "../components/CreateMenu";
 import StudyManual from "../components/StudyManual";
 import ThemeToggle from "../components/ThemeToggle";
+import InstallApp from "../components/InstallApp";
 import {
   Badge,
   ErrorBox,
@@ -96,6 +97,8 @@ export default function Home() {
       >
         {t("home.welcome")}
       </PageTitle>
+
+      <InstallApp banner />
 
       <section className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="glass rounded-3xl p-7">

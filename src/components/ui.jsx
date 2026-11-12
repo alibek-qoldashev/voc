@@ -53,8 +53,13 @@ export function Spinner({ label }) {
   );
 }
 
+// Oflayn rejimda saqlanmagan ma'lumot so'ralganda
+const OFFLINE_CODES = ["offline-empty", "offline-missing"];
+
 export function ErrorBox({ children }) {
+  const { t } = useLang();
   if (!children) return null;
+  if (OFFLINE_CODES.includes(children)) children = t("offline.empty");
   return (
     <p role="alert" className="rounded-xl border border-rose/40 bg-rose/10 px-4 py-3 text-sm text-rose">
       {children}
